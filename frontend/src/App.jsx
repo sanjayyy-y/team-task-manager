@@ -7,30 +7,29 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import MyTasks from './pages/MyTasks';
+import Team from './pages/Team';
 import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   return (
     <>
-      <Toaster position="top-right" toastOptions={{ style: { background: '#334155', color: '#fff' } }} />
+      <Toaster position="top-right" toastOptions={{ style: { background: '#28283a', color: '#f0f0f5', border: '1px solid #2e2e42' } }} />
       <Routes>
-        {/* Public Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
-      {/* Protected Routes (requires login) */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:id" element={<ProjectDetail />} />
-          <Route path="/tasks" element={<MyTasks />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/tasks" element={<MyTasks />} />
+            <Route path="/team" element={<Team />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </>
   );
 }

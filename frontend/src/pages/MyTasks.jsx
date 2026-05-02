@@ -8,16 +8,14 @@ export default function MyTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  useEffect(() => { fetchTasks(); }, []);
 
   const fetchTasks = async () => {
     try {
       const res = await api.get('/tasks/me');
       setTasks(res.data.data);
-    } catch (error) {
-      console.error('Failed to fetch tasks:', error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -27,57 +25,68 @@ export default function MyTasks() {
     try {
       setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
       await api.put(`/projects/${projectId}/tasks/${taskId}`, { status: newStatus });
-    } catch (error) {
-      fetchTasks(); // revert on failure
-      toast.error(error.response?.data?.message || 'Failed to update task');
+    } catch (err) {
+      fetchTasks();
+      toast.error(err.response?.data?.message || 'Failed to update');
     }
   };
 
-  if (loading) return <div className="loading-screen">Loading your tasks...</div>;
+  if (loading) return <div className="loading">Loading your tasks...</div>;
+
+  const pillFor = (status) => {
+    if (status === 'done') return 'pill-green';
+    if (status === 'in-progress') return 'pill-blue';
+    return 'pill-gray';
+  };
 
   return (
-    <div className="my-tasks-page">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1>My Tasks</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>All tasks assigned to you across all projects</p>
+    <div>
+      <div className="page-header">
+        <div>
+          <h1>My Tasks</h1>
+          <div className="date">All tasks assigned to you across projects</div>
+        </div>
       </div>
 
       {tasks.length === 0 ? (
-        <div className="empty-state glass">
+        <div className="empty-state">
           <h3>You're all caught up!</h3>
           <p>No tasks assigned to you right now.</p>
         </div>
       ) : (
-        <div className="tasks-list glass" style={{ padding: '2rem' }}>
+        <div className="tasks-table">
+          <div className="task-table-row task-table-header">
+            <div>Task</div>
+            <div>Project</div>
+            <div>Due date</div>
+            <div>Status</div>
+          </div>
           {tasks.map(task => (
-            <div key={task._id} className="task-list-item" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+            <div key={task._id} className="task-table-row">
               <div>
-                <h3 style={{ marginBottom: '0.25rem' }}>{task.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                  {task.description}
-                </p>
-                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                  <span>
-                    Project: <Link to={`/projects/${task.projectId._id}`} style={{ color: 'var(--primary-color)' }}>{task.projectId.name}</Link>
-                  </span>
-                  {task.dueDate && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Calendar size={14} /> 
-                      {new Date(task.dueDate).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
+                <div className="task-name">{task.title}</div>
               </div>
-              
-              <select 
-                value={task.status} 
-                onChange={(e) => handleStatusChange(task._id, task.projectId._id, e.target.value)}
-                className="status-select"
-              >
-                <option value="todo">To Do</option>
-                <option value="in-progress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
+              <div>
+                <Link to={`/projects/${task.projectId?._id}`} style={{ fontSize: '0.85rem' }}>
+                  {task.projectId?.name || 'Unknown'}
+                </Link>
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                {task.dueDate ? (
+                  <><Calendar size={13} /> {new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</>
+                ) : '—'}
+              </div>
+              <div>
+                <select
+                  value={task.status}
+                  onChange={e => handleStatusChange(task._id, task.projectId?._id, e.target.value)}
+                  className="status-select"
+                >
+                  <option value="todo">Todo</option>
+                  <option value="in-progress">In progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
             </div>
           ))}
         </div>

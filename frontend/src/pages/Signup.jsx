@@ -8,7 +8,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { signup } = useAuth();
   const navigate = useNavigate();
 
@@ -28,12 +28,17 @@ export default function Signup() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card glass">
-        <h1>Join the Team</h1>
-        <p>Create an account to get started</p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-icon">T</div>
+          <span>TeamTask</span>
+        </div>
 
-        {error && <div style={{ color: 'var(--status-overdue)', marginBottom: '1rem' }}>{error}</div>}
+        <h1>Create account</h1>
+        <p className="subtitle">Get started with your team</p>
+
+        {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -49,7 +54,7 @@ export default function Signup() {
           </div>
 
           <div className="form-group">
-            <label>Email Address</label>
+            <label>Email</label>
             <input
               type="email"
               className="form-input"
@@ -73,8 +78,8 @@ export default function Signup() {
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Sign Up'}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem' }} disabled={loading}>
+            {loading ? 'Creating account...' : 'Sign up'}
           </button>
         </form>
 

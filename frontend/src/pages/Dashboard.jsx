@@ -1,127 +1,130 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
-import { 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  FolderKanban,
-  Calendar
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [myTasks, setMyTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const load = async () => {
       try {
-        const [statsRes, tasksRes] = await Promise.all([
+        const [statsRes, tasksRes, projRes] = await Promise.all([
           api.get('/dashboard/stats'),
-          api.get('/tasks/me')
+          api.get('/tasks/me'),
+          api.get('/projects'),
         ]);
-        
         setStats(statsRes.data.data);
-        // just show the top 5 most recent tasks for the dashboard
-        setMyTasks(tasksRes.data.data.slice(0, 5));
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        setMyTasks(tasksRes.data.data.slice(0, 4));
+        setProjects(projRes.data.data.slice(0, 3));
+      } catch (err) {
+        console.error('Dashboard load failed:', err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchDashboardData();
+    load();
   }, []);
 
-  if (loading) return <div className="loading-screen">Loading dashboard...</div>;
+  if (loading) return <div className="loading">Loading dashboard...</div>;
+
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  // figure out the status info for the dot and pill
+  const statusMeta = (task) => {
+    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
+    if (isOverdue) return { dot: 'var(--c-red)', pillClass: 'pill-red', label: 'Overdue' };
+    if (task.status === 'done') return { dot: 'var(--c-green)', pillClass: 'pill-green', label: 'Done' };
+    if (task.status === 'in-progress') return { dot: 'var(--c-blue)', pillClass: 'pill-blue', label: 'In progress' };
+    return { dot: 'var(--c-gray)', pillClass: 'pill-gray', label: 'Todo' };
+  };
+
+  // rough progress calc: done tasks / total tasks per project
+  const calcProgress = (proj) => {
+    // we don't have per-project task counts yet so use overall stats as a fallback
+    if (!stats || stats.totalTasks === 0) return 0;
+    return Math.round((stats.byStatus.done / stats.totalTasks) * 100);
+  };
 
   return (
-    <div className="dashboard">
-      <h1 style={{ marginBottom: '0.5rem' }}>Welcome back, {user?.name.split(' ')[0]} 👋</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Here's what's happening with your projects today.
-      </p>
-
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card glass">
-          <div className="stat-icon" style={{ color: 'var(--primary-color)' }}>
-            <FolderKanban size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>{stats?.projectCount || 0}</h3>
-            <p>Active Projects</p>
-          </div>
+    <div>
+      <div className="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <div className="date">{today}</div>
         </div>
+        <button className="btn btn-primary" onClick={() => navigate('/projects')}>
+          <Plus size={16} /> New Project
+        </button>
+      </div>
 
-        <div className="stat-card glass">
-          <div className="stat-icon" style={{ color: 'var(--status-in-progress)' }}>
-            <Clock size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>{stats?.byStatus?.inProgress || 0}</h3>
-            <p>Tasks In Progress</p>
-          </div>
+      {/* Stat cards */}
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="label">Total tasks</div>
+          <div className="value value-white">{stats?.totalTasks || 0}</div>
         </div>
-
-        <div className="stat-card glass">
-          <div className="stat-icon" style={{ color: 'var(--status-done)' }}>
-            <CheckCircle size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>{stats?.byStatus?.done || 0}</h3>
-            <p>Tasks Completed</p>
-          </div>
+        <div className="stat-card">
+          <div className="label">In progress</div>
+          <div className="value value-blue">{stats?.byStatus?.inProgress || 0}</div>
         </div>
-
-        <div className="stat-card glass">
-          <div className="stat-icon" style={{ color: 'var(--status-overdue)' }}>
-            <AlertCircle size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>{stats?.overdue || 0}</h3>
-            <p>Tasks Overdue</p>
-          </div>
+        <div className="stat-card">
+          <div className="label">Completed</div>
+          <div className="value value-green">{stats?.byStatus?.done || 0}</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Overdue</div>
+          <div className="value value-red">{stats?.overdue || 0}</div>
         </div>
       </div>
 
-      {/* Recent Tasks List */}
-      <div className="recent-tasks glass">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2>Your Recent Tasks</h2>
-          <Link to="/tasks" style={{ fontSize: '0.875rem' }}>View all tasks →</Link>
+      {/* Two column: Recent tasks + Active projects */}
+      <div className="dash-grid">
+        <div className="dash-panel">
+          <h2>Recent tasks</h2>
+          {myTasks.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No tasks assigned to you yet.</p>
+          ) : (
+            myTasks.map(task => {
+              const meta = statusMeta(task);
+              return (
+                <div className="task-row" key={task._id}>
+                  <div className="task-dot" style={{ background: meta.dot }} />
+                  <div className="task-row-name">{task.title}</div>
+                  <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {myTasks.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)' }}>You don't have any tasks assigned right now.</p>
-        ) : (
-          <div className="task-list">
-            {myTasks.map(task => (
-              <div key={task._id} className="task-list-item">
-                <div>
-                  <h4 style={{ marginBottom: '0.25rem' }}>{task.title}</h4>
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    <span>Project: {task.projectId?.name || 'Unknown'}</span>
-                    {task.dueDate && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Calendar size={14} /> 
-                        {new Date(task.dueDate).toLocaleDateString()}
-                      </span>
-                    )}
+        <div className="dash-panel">
+          <h2>Active projects</h2>
+          {projects.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No projects yet.</p>
+          ) : (
+            projects.map(proj => {
+              const pct = calcProgress(proj);
+              return (
+                <Link to={`/projects/${proj._id}`} key={proj._id} className="proj-item" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+                  <div className="proj-item-name">{proj.name}</div>
+                  <div className="progress-bar-bg">
+                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
                   </div>
-                </div>
-                
-                <div className={`status-badge status-${task.status}`}>
-                  {task.status.replace('-', ' ')}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                  <div className="proj-meta">{pct}% complete</div>
+                </Link>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

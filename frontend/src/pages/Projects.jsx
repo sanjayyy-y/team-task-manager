@@ -2,123 +2,97 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Plus, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  
-  // Create project form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
-  
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  useEffect(() => { fetchProjects(); }, []);
 
   const fetchProjects = async () => {
     try {
       const res = await api.get('/projects');
       setProjects(res.data.data);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
+    } catch (err) {
+      console.error('Failed to fetch projects:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateProject = async (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
-    setError('');
     setCreating(true);
-
     try {
       const res = await api.post('/projects', { name, description });
-      // Go straight to the new project board
+      toast.success('Project created');
       navigate(`/projects/${res.data.data._id}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create project');
+      toast.error(err.response?.data?.message || 'Failed to create project');
       setCreating(false);
     }
   };
 
-  if (loading) return <div className="loading-screen">Loading projects...</div>;
+  if (loading) return <div className="loading">Loading projects...</div>;
 
   return (
-    <div className="projects-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div>
+      <div className="page-header">
         <div>
-          <h1>Your Projects</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage your team's work</p>
+          <h1>Projects</h1>
+          <div className="date">Manage your team's work</div>
         </div>
-        <button className="btn-primary" style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowModal(true)}>
-          <Plus size={18} />
-          New Project
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <Plus size={16} /> New Project
         </button>
       </div>
 
       {projects.length === 0 ? (
-        <div className="empty-state glass">
+        <div className="empty-state">
           <h3>No projects yet</h3>
-          <p>Create your first project to start organizing tasks.</p>
+          <p>Create your first project to start organising tasks.</p>
         </div>
       ) : (
         <div className="projects-grid">
-          {projects.map(project => (
-            <Link to={`/projects/${project._id}`} key={project._id} className="project-card glass">
-              <h3>{project.name}</h3>
-              <p>{project.description || 'No description provided.'}</p>
+          {projects.map(proj => (
+            <Link to={`/projects/${proj._id}`} key={proj._id} className="project-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <h3>{proj.name}</h3>
+              <p>{proj.description || 'No description provided.'}</p>
               <div className="project-card-footer">
-                <span>View Board</span>
-                <ArrowRight size={16} />
+                <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  View Board <ArrowRight size={14} />
+                </span>
               </div>
             </Link>
           ))}
         </div>
       )}
 
-      {/* Simple Modal for creating a project */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content glass">
-            <h2>Create New Project</h2>
-            {error && <div style={{ color: 'var(--status-overdue)', margin: '1rem 0' }}>{error}</div>}
-            
-            <form onSubmit={handleCreateProject}>
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create new project</h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleCreate}>
               <div className="form-group">
                 <label>Project Name</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  required 
-                  placeholder="e.g., Website Redesign"
-                  autoFocus
-                />
+                <input type="text" className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Website Redesign" required autoFocus />
               </div>
               <div className="form-group">
-                <label>Description (Optional)</label>
-                <textarea 
-                  className="form-input" 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)} 
-                  rows="3"
-                  placeholder="What is this project about?"
-                />
+                <label>Description</label>
+                <textarea className="form-input" value={description} onChange={e => setDescription(e.target.value)} rows="3" placeholder="What is this project about?" />
               </div>
-              
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" disabled={creating}>
-                  {creating ? 'Creating...' : 'Create Project'}
-                </button>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={creating}>{creating ? 'Creating...' : 'Create project'}</button>
               </div>
             </form>
           </div>

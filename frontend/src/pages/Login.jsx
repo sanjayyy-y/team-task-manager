@@ -7,7 +7,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -27,16 +27,21 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card glass">
-        <h1>Welcome Back</h1>
-        <p>Sign in to manage your team's tasks</p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-icon">T</div>
+          <span>TeamTask</span>
+        </div>
 
-        {error && <div style={{ color: 'var(--status-overdue)', marginBottom: '1rem' }}>{error}</div>}
+        <h1>Welcome back</h1>
+        <p className="subtitle">Sign in to your workspace</p>
+
+        {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email Address</label>
+            <label>Email</label>
             <input
               type="email"
               className="form-input"
@@ -59,13 +64,17 @@ export default function Login() {
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem' }} disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
         <div className="auth-link">
           Don't have an account? <Link to="/signup">Sign up</Link>
+        </div>
+
+        <div className="auth-footer">
+          Role assigned on signup: Admin or Member
         </div>
       </div>
     </div>
