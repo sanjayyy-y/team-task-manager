@@ -3,6 +3,10 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
+import MyTasks from './pages/MyTasks';
 
 export default function App() {
   return (
@@ -14,8 +18,10 @@ export default function App() {
       {/* Protected Routes (requires login) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<div><h1>Dashboard</h1><p>Welcome to TeamTask</p></div>} />
-          {/* We will add /projects and /tasks here later */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/tasks" element={<MyTasks />} />
         </Route>
       </Route>
 
