@@ -15,8 +15,10 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'API is running 🚀' });
 });
 
-// --------------- Routes (coming in Phase 2+) ---------------
-// app.use('/api/auth', authRoutes);
+// routes
+import authRoutes from './src/routes/authRoutes.js';
+
+app.use('/api/auth', authRoutes);
 // app.use('/api/projects', projectRoutes);
 // app.use('/api/tasks', taskRoutes);
 // app.use('/api/dashboard', dashboardRoutes);

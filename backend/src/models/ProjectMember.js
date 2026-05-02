@@ -21,7 +21,7 @@ const projectMemberSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index — prevents duplicate memberships at the database level
+// one user can't be added to the same project twice
 projectMemberSchema.index({ projectId: 1, userId: 1 }, { unique: true });
 
 const ProjectMember = mongoose.model('ProjectMember', projectMemberSchema);

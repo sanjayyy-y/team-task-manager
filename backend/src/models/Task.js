@@ -30,7 +30,7 @@ const taskSchema = new mongoose.Schema(
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null, // Tasks can be unassigned initially
+      default: null, // can be unassigned
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -45,7 +45,7 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for common queries — fetching tasks by project, by assignee, and overdue tasks
+// speed up the queries we'll run most often
 taskSchema.index({ projectId: 1, status: 1 });
 taskSchema.index({ assignedTo: 1, status: 1 });
 
