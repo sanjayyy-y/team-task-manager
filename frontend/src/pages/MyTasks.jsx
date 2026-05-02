@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function MyTasks() {
   const [tasks, setTasks] = useState([]);
@@ -28,7 +29,7 @@ export default function MyTasks() {
       await api.put(`/projects/${projectId}/tasks/${taskId}`, { status: newStatus });
     } catch (error) {
       fetchTasks(); // revert on failure
-      alert(error.response?.data?.message || 'Failed to update task');
+      toast.error(error.response?.data?.message || 'Failed to update task');
     }
   };
 

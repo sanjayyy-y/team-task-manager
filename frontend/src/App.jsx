@@ -7,11 +7,14 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import MyTasks from './pages/MyTasks';
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
+    <>
+      <Toaster position="top-right" toastOptions={{ style: { background: '#334155', color: '#fff' } }} />
+      <Routes>
+        {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
@@ -28,5 +31,6 @@ export default function App() {
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

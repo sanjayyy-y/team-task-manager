@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { Plus, Users, Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -63,8 +64,9 @@ export default function ProjectDetail() {
       setTaskDesc('');
       setTaskAssignee('');
       fetchProjectData(); // refresh board
+      toast.success('Task created');
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create task');
+      toast.error(error.response?.data?.message || 'Failed to create task');
     }
   };
 
@@ -78,8 +80,9 @@ export default function ProjectDetail() {
       setShowMemberModal(false);
       setMemberEmail('');
       fetchProjectData();
+      toast.success('Member invited');
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to add member');
+      toast.error(error.response?.data?.message || 'Failed to add member');
     }
   };
 
@@ -92,7 +95,7 @@ export default function ProjectDetail() {
     } catch (error) {
       // revert on failure
       fetchProjectData();
-      alert(error.response?.data?.message || 'Failed to update task');
+      toast.error(error.response?.data?.message || 'Failed to update task');
     }
   };
 
