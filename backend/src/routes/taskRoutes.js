@@ -9,10 +9,10 @@ import {
 import auth from '../middleware/auth.js';
 import { checkProjectMembership } from '../middleware/rbac.js';
 
-// mergeParams is crucial here so we can grab the :projectId from the URL
+
 const router = Router({ mergeParams: true });
 
-// all these routes require you to be logged in and actually be in the project
+
 router.use(auth);
 router.use(checkProjectMembership);
 
@@ -22,7 +22,7 @@ router.route('/')
 
 router.route('/:taskId')
   .get(getTaskById)
-  .put(updateTask) // controller checks ownership for members
-  .delete(deleteTask); // controller checks ownership for members
+  .put(updateTask)
+  .delete(deleteTask);
 
 export default router;

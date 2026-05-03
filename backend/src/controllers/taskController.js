@@ -1,8 +1,6 @@
 import Task from '../models/Task.js';
 import ProjectMember from '../models/ProjectMember.js';
 
-// create a task
-// admins can assign to anyone, members auto-assign to themselves
 export const createTask = async (req, res) => {
   try {
     const { title, description, assignedTo, priority, dueDate, status } = req.body;
@@ -16,14 +14,14 @@ export const createTask = async (req, res) => {
     let finalAssignee = null;
 
     if (isAdmin && assignedTo) {
-      // admin is assigning to someone — verify they're in the project
+    
       const isMember = await ProjectMember.findOne({ projectId, userId: assignedTo });
       if (!isMember) {
         return res.status(400).json({ success: false, message: 'Assignee is not a member of this project' });
       }
       finalAssignee = assignedTo;
     } else if (!isAdmin) {
-      // member creating a task — force assign to themselves
+
       finalAssignee = req.user._id;
     }
 
@@ -45,7 +43,7 @@ export const createTask = async (req, res) => {
   }
 };
 
-// get all tasks for a specific project
+
 export const getProjectTasks = async (req, res) => {
   try {
     const projectId = req.params.projectId;
@@ -65,7 +63,6 @@ export const getProjectTasks = async (req, res) => {
   }
 };
 
-// get a single task by its id
 export const getTaskById = async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.taskId, projectId: req.params.projectId })
@@ -83,7 +80,6 @@ export const getTaskById = async (req, res) => {
 };
 
 // update a task
-// admins can change anything. members can edit their own tasks (title, desc, status, priority, dueDate) but NOT the assignee.
 export const updateTask = async (req, res) => {
   try {
     const { taskId, projectId } = req.params;
@@ -102,14 +98,13 @@ export const updateTask = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You can only update your own tasks' });
     }
 
-    // everyone can update these fields on their own tasks
     if (req.body.title) task.title = req.body.title;
     if (req.body.description !== undefined) task.description = req.body.description;
     if (req.body.status) task.status = req.body.status;
     if (req.body.priority) task.priority = req.body.priority;
     if (req.body.dueDate !== undefined) task.dueDate = req.body.dueDate;
 
-    // only admins can change the assignee
+
     if (isAdmin) {
       if (req.body.assignedTo && req.body.assignedTo !== task.assignedTo?.toString()) {
         const isMember = await ProjectMember.findOne({ projectId, userId: req.body.assignedTo });
@@ -131,7 +126,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// delete a task — admins can delete any, members can delete their own
+
 export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.taskId, projectId: req.params.projectId });
@@ -155,7 +150,7 @@ export const deleteTask = async (req, res) => {
   }
 };
 
-// get all tasks assigned to the current user across all projects
+
 export const getMyTasks = async (req, res) => {
   try {
     const { status, overdue } = req.query;

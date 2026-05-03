@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // check if we already have a session when the app loads
+  
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');

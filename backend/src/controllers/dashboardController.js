@@ -6,11 +6,11 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // first, how many projects are they part of?
+    
     const memberships = await ProjectMember.find({ userId });
     const projectIds = memberships.map((m) => m.projectId);
 
-    // if they aren't in any projects, just return zeros
+    
     if (projectIds.length === 0) {
       return res.json({
         success: true,
@@ -23,16 +23,15 @@ export const getDashboardStats = async (req, res) => {
       });
     }
 
-    // using a MongoDB aggregation pipeline here because it's much faster 
-    // to do the math in the database rather than pulling hundreds of tasks into Node
+    
     const stats = await Task.aggregate([
-      // step 1: grab all tasks in the projects this user has access to
+      
       { $match: { projectId: { $in: projectIds } } },
       
-      // step 2: group everything together and tally up the stats
+      
       {
         $group: {
-          _id: null, // we want one big summary object
+          _id: null, 
           totalTasks: { $sum: 1 },
           todo: {
             $sum: { $cond: [{ $eq: ['$status', 'todo'] }, 1, 0] },
@@ -61,7 +60,7 @@ export const getDashboardStats = async (req, res) => {
       },
     ]);
 
-    // if there are tasks, stats[0] will have the numbers. otherwise set defaults
+    
     const result = stats[0] || { totalTasks: 0, todo: 0, inProgress: 0, done: 0, overdue: 0 };
 
     res.json({

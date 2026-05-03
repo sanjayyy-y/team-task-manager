@@ -234,7 +234,7 @@ export default function ProjectDetail() {
         ))}
       </div>
 
-      {/* Task list */}
+
       <div className="task-list-header">
         <h2>{filterLabel} <span>({filteredTasks.length})</span></h2>
       </div>
@@ -267,7 +267,7 @@ export default function ProjectDetail() {
         })
       )}
 
-      {/* Create Task Modal */}
+      
       <AnimatePresence>
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>

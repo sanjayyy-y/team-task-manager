@@ -3,7 +3,7 @@ import ProjectMember from '../models/ProjectMember.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
 
-// create a new project and make the creator an admin automatically
+
 export const createProject = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -18,7 +18,7 @@ export const createProject = async (req, res) => {
       createdBy: req.user._id,
     });
 
-    // they made it, so they should be an admin right away
+
     await ProjectMember.create({
       projectId: project._id,
       userId: req.user._id,
@@ -31,14 +31,14 @@ export const createProject = async (req, res) => {
   }
 };
 
-// fetch all projects the user is involved in
+
 export const getProjects = async (req, res) => {
   try {
-    // first figure out which projects they belong to
+
     const memberships = await ProjectMember.find({ userId: req.user._id });
     const projectIds = memberships.map((m) => m.projectId);
 
-    // now get the actual project details
+
     const projects = await Project.find({ _id: { $in: projectIds } }).sort('-createdAt');
 
     res.json({ success: true, data: projects });
@@ -47,7 +47,6 @@ export const getProjects = async (req, res) => {
   }
 };
 
-// grab a single project along with its tasks and members
 export const getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
@@ -56,7 +55,7 @@ export const getProjectById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    // pull in the members and populate their name/email so the UI can show them
+
     const members = await ProjectMember.find({ projectId: project._id })
       .populate('userId', 'name email');
 
@@ -72,7 +71,7 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-// update just the basics
+
 export const updateProject = async (req, res) => {
   try {
     const project = await Project.findByIdAndUpdate(
@@ -87,7 +86,7 @@ export const updateProject = async (req, res) => {
   }
 };
 
-// delete the project and wipe its associated data so we don't leave junk behind
+
 export const deleteProject = async (req, res) => {
   try {
     await Project.findByIdAndDelete(req.params.id);
@@ -100,18 +99,17 @@ export const deleteProject = async (req, res) => {
   }
 };
 
-// add a new teammate
+
 export const addMember = async (req, res) => {
   try {
     const { email, role } = req.body;
     
-    // find the user they want to add
     const userToAdd = await User.findOne({ email });
     if (!userToAdd) {
       return res.status(404).json({ success: false, message: 'No user found with that email' });
     }
 
-    // see if they are already in the project
+
     const existing = await ProjectMember.findOne({
       projectId: req.params.id,
       userId: userToAdd._id,
@@ -124,7 +122,7 @@ export const addMember = async (req, res) => {
     const member = await ProjectMember.create({
       projectId: req.params.id,
       userId: userToAdd._id,
-      role: role || 'member', // default to regular member just in case
+      role: role || 'member',
     });
 
     res.status(201).json({ success: true, data: member });
@@ -133,7 +131,7 @@ export const addMember = async (req, res) => {
   }
 };
 
-// bump someone to admin or back to member
+
 export const updateMemberRole = async (req, res) => {
   try {
     const { role } = req.body;
@@ -159,13 +157,11 @@ export const updateMemberRole = async (req, res) => {
   }
 };
 
-// kick someone out of the project
+
 export const removeMember = async (req, res) => {
   try {
     const { id, userId } = req.params;
-
-    // don't let people remove themselves to avoid zero-admin situations, 
-    // though normally we'd allow leaving. for simplicity, just prevent self-removal for admins
+    
     if (req.user._id.toString() === userId) {
       return res.status(400).json({ success: false, message: 'You cannot remove yourself' });
     }

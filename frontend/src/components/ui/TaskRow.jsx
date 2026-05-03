@@ -14,7 +14,7 @@ const TaskRow = React.memo(({
   task,
   delay = 0,
   canEdit = false,
-  members = [], // only needed if we want to show assignee avatar
+  members = [],
   onStatusChange,
   onDelete
 }) => {
@@ -48,12 +48,11 @@ const TaskRow = React.memo(({
         )}
       </div>
 
-      {/* Assignee Avatar */}
       {assignee && members.length > 0 && (
         <div
           className="avatar avatar-xs"
           style={{ background: avatarColors[members.findIndex(m => m.userId?._id === assignee._id || m._id === assignee._id) % avatarColors.length] || avatarColors[0] }}
-          title={assignee.name} // Native tooltip, user requested "Add tooltip showing full member name on avatar hover"
+          title={assignee.name}
         >
           {getInitials(assignee.name)}
         </div>

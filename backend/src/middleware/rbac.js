@@ -3,7 +3,7 @@ import ProjectMember from '../models/ProjectMember.js';
 // check if the user is actually part of this project
 export const checkProjectMembership = async (req, res, next) => {
   try {
-    // some routes use id, some use projectId in the URL
+    
     const projectId = req.params.projectId || req.params.id;
 
     if (!projectId) {
@@ -19,7 +19,6 @@ export const checkProjectMembership = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'You do not have access to this project' });
     }
 
-    // attach the role so the next middleware knows what permissions they have
     req.projectRole = membership.role;
     next();
   } catch (error) {

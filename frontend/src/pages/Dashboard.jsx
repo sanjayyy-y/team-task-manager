@@ -31,7 +31,7 @@ export default function Dashboard() {
         const projs = projRes.data.data.slice(0, 3);
         setProjects(projs);
 
-        // fetch per-project task counts for accurate progress bars
+        
         const statsMap = {};
         await Promise.all(projs.map(async (proj) => {
           try {

@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 
-// POST /api/auth/signup
+
 export const signup = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -10,7 +10,7 @@ export const signup = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
-    // check if someone already registered with this email
+    
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already in use' });
@@ -33,7 +33,7 @@ export const signup = async (req, res) => {
   }
 };
 
-// POST /api/auth/login
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -42,7 +42,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
 
-    // need to explicitly select password since we set select: false in the model
+   
     const user = await User.findOne({ email }).select('+password');
 
     if (!user || !(await user.matchPassword(password))) {
@@ -64,7 +64,7 @@ export const login = async (req, res) => {
   }
 };
 
-// GET /api/auth/me
+
 export const getMe = async (req, res) => {
   res.json({
     success: true,
@@ -77,7 +77,6 @@ export const getMe = async (req, res) => {
   });
 };
 
-// PUT /api/auth/me — update own profile
 export const updateMe = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -85,7 +84,7 @@ export const updateMe = async (req, res) => {
 
     if (name) user.name = name;
     if (email) user.email = email;
-    if (password) user.password = password; // pre-save hook will hash it
+    if (password) user.password = password;
 
     await user.save();
 
@@ -103,7 +102,6 @@ export const updateMe = async (req, res) => {
   }
 };
 
-// DELETE /api/auth/me — delete own account
 export const deleteMe = async (req, res) => {
   try {
     await User.findByIdAndDelete(req.user._id);
@@ -113,7 +111,6 @@ export const deleteMe = async (req, res) => {
   }
 };
 
-// GET /api/auth/users — list all registered users (for adding to teams)
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('name email role').sort('name');

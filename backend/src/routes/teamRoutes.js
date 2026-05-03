@@ -13,7 +13,7 @@ import requireAdmin from '../middleware/requireAdmin.js';
 
 const router = Router();
 
-// all team routes need auth + admin
+
 router.use(auth);
 router.use(requireAdmin);
 
@@ -31,7 +31,7 @@ router.route('/:id/members')
 router.route('/:id/members/:userId')
   .delete(removeTeamMember);
 
-// get all tasks for a specific user (admin viewing a team member's work)
+
 router.get('/user/:userId/tasks', getUserTasks);
 
 export default router;

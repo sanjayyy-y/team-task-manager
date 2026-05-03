@@ -12,7 +12,7 @@ const auth = async (req, res, next) => {
     const token = header.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // attach user to req so downstream handlers can use it
+    
     req.user = await User.findById(decoded.id);
 
     if (!req.user) {

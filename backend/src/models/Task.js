@@ -45,7 +45,7 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// speed up the queries we'll run most often
+
 taskSchema.index({ projectId: 1, status: 1 });
 taskSchema.index({ assignedTo: 1, status: 1 });
 

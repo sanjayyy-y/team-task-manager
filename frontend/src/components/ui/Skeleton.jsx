@@ -9,7 +9,7 @@ export default function Skeleton({ className = '', style = {}, height, width, bo
         height: height || style.height,
         width: width || style.width,
         borderRadius,
-        background: '#1e1e1e', // Base color
+        background: '#1e1e1e', 
       }}
       animate={{
         backgroundColor: ['#1e1e1e', '#2a2a3a', '#1e1e1e'],

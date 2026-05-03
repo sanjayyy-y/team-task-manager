@@ -2,7 +2,7 @@ import Team from '../models/Team.js';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
 
-// POST /api/teams — create a new team
+
 export const createTeam = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -14,7 +14,7 @@ export const createTeam = async (req, res) => {
     const team = await Team.create({
       name,
       description,
-      members: [req.user._id], // admin is auto-added
+      members: [req.user._id],
       createdBy: req.user._id,
     });
 
@@ -24,7 +24,7 @@ export const createTeam = async (req, res) => {
   }
 };
 
-// GET /api/teams — list all teams
+
 export const getTeams = async (req, res) => {
   try {
     const teams = await Team.find()
@@ -37,7 +37,7 @@ export const getTeams = async (req, res) => {
   }
 };
 
-// GET /api/teams/:id — get a single team with members
+
 export const getTeamById = async (req, res) => {
   try {
     const team = await Team.findById(req.params.id)
@@ -53,7 +53,7 @@ export const getTeamById = async (req, res) => {
   }
 };
 
-// POST /api/teams/:id/members — add a user to the team
+
 export const addTeamMember = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -67,7 +67,6 @@ export const addTeamMember = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User is already in this team' });
     }
 
-    // verify the user actually exists
     const userExists = await User.findById(userId);
     if (!userExists) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -83,7 +82,7 @@ export const addTeamMember = async (req, res) => {
   }
 };
 
-// DELETE /api/teams/:id/members/:userId — remove a user from the team
+
 export const removeTeamMember = async (req, res) => {
   try {
     const team = await Team.findById(req.params.id);
@@ -101,7 +100,7 @@ export const removeTeamMember = async (req, res) => {
   }
 };
 
-// DELETE /api/teams/:id — delete a team
+
 export const deleteTeam = async (req, res) => {
   try {
     await Team.findByIdAndDelete(req.params.id);
@@ -111,7 +110,6 @@ export const deleteTeam = async (req, res) => {
   }
 };
 
-// GET /api/teams/user/:userId/tasks — get all tasks assigned to a user across all projects
 export const getUserTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ assignedTo: req.params.userId })
