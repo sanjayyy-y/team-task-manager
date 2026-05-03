@@ -384,3 +384,92 @@ textarea.form-input { resize: vertical; }
   font-size: 0.8rem;
   cursor: pointer;
 }
+
+/* ── Team Page ── */
+.team-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.team-tab {
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.team-tab:hover { border-color: var(--primary); }
+.team-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.team-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.5rem;
+  min-height: calc(100vh - 260px);
+}
+
+.team-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 0;
+  height: fit-content;
+}
+.team-sidebar-header {
+  padding: 0 1rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.team-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.team-member-item:hover { background: var(--surface-2); }
+.team-member-item.active {
+  background: rgba(109,94,248,0.15);
+}
+.team-member-name { font-size: 0.875rem; font-weight: 500; }
+.team-member-role { font-size: 0.75rem; color: var(--text-muted); }
+.team-member-item.active .team-member-name { color: var(--primary); }
+
+.team-detail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+.team-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.team-stats {
+  display: flex;
+  gap: 1rem;
+}
+.team-stat-card {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+.team-stat-card .label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+.team-stat-card .value { font-size: 1.5rem; font-weight: 700; }
