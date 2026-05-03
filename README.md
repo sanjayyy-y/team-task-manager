@@ -6,7 +6,7 @@
   <h1>🚀 TeamTask Manager</h1>
   <p>A highly polished, full-stack project management and team collaboration platform built with the MERN stack.</p>
 
-  **[View Live Demo (Frontend)](#) | [Backend API Health Check](#)**
+  **[View Live Demo (Frontend)](https://team-task-manager-gold-phi.vercel.app/) | [Backend API Health Check](https://team-task-manager-production-135c.up.railway.app/api/health)**
 </div>
 
 <br />
