@@ -86,9 +86,11 @@ export default function Sidebar() {
           </div>
         )}
 
-        <NavLink to="/team" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
-          <Users size={16} /> Teams
-        </NavLink>
+        {isAdmin && (
+          <NavLink to="/team" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+            <Users size={16} /> Teams
+          </NavLink>
+        )}
       </nav>
 
       {/* bottom: settings */}

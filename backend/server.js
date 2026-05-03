@@ -20,12 +20,15 @@ import projectRoutes from './src/routes/projectRoutes.js';
 import taskRoutes from './src/routes/taskRoutes.js';
 import userTaskRoutes from './src/routes/userTaskRoutes.js';
 import dashboardRoutes from './src/routes/dashboardRoutes.js';
+import teamRoutes from './src/routes/teamRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/projects/:projectId/tasks', taskRoutes);
 app.use('/api/tasks', userTaskRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/teams', teamRoutes);
+
 
 // --------------- Start Server ---------------
 connectDB().then(() => {
