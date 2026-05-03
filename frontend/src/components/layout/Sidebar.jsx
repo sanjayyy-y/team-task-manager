@@ -1,58 +1,101 @@
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { LayoutDashboard, FolderKanban, CheckSquare, Users, LogOut } from 'lucide-react';
+import api from '../../services/api';
+import { LayoutDashboard, Users, Settings, ChevronRight, LogOut } from 'lucide-react';
+
+const dotColors = ['#5b9bf5', '#3ddc84', '#f5a623', '#a78bfa', '#f06060', '#5e5ce6'];
 
 const getInitials = (name) => {
   if (!name) return '?';
-  const parts = name.split(' ');
-  return parts.length > 1
-    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : parts[0][0].toUpperCase();
+  const p = name.split(' ');
+  return p.length > 1 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : p[0][0].toUpperCase();
 };
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
 
-  const links = [
-    { name: 'Dashboard', path: '/',         icon: <LayoutDashboard size={18} /> },
-    { name: 'Projects',  path: '/projects',  icon: <FolderKanban size={18} /> },
-    { name: 'My Tasks',  path: '/tasks',     icon: <CheckSquare size={18} /> },
-    { name: 'Team',      path: '/team',      icon: <Users size={18} /> },
-  ];
+  const [projects, setProjects] = useState([]);
+  const [projectsOpen, setProjectsOpen] = useState(true);
+
+  useEffect(() => {
+    api.get('/projects').then(res => setProjects(res.data.data)).catch(() => {});
+  }, []);
+
+  // figure out if we're currently on a project page
+  const projectMatch = location.pathname.match(/^\/projects\/([a-f0-9]+)/);
+  const activeProjectId = projectMatch ? projectMatch[1] : null;
+
+  // auto-expand if we land on a project page
+  useEffect(() => {
+    if (activeProjectId) setProjectsOpen(true);
+  }, [activeProjectId]);
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">T</div>
-        <span>TeamTask</span>
+      {/* top: logo + user */}
+      <div className="sidebar-top">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">T</div>
+          <span>TeamTask</span>
+        </div>
+        <div className="sidebar-user">
+          <div className="avatar">{getInitials(user?.name)}</div>
+          <div style={{ flex: 1 }}>
+            <div className="sidebar-user-name">{user?.name}</div>
+            <div className="sidebar-user-role">{isAdmin ? 'Admin' : 'Member'}</div>
+          </div>
+          <button onClick={logout} style={{ background: 'none', color: 'var(--text-3)', padding: '4px' }} title="Logout">
+            <LogOut size={14} />
+          </button>
+        </div>
       </div>
 
+      {/* nav */}
       <nav className="sidebar-nav">
-        {links.map((link) => (
-          <NavLink
-            key={link.name}
-            to={link.path}
-            end={link.path === '/'}
-            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-          >
-            {link.icon}
-            {link.name}
-          </NavLink>
-        ))}
-      </nav>
+        <NavLink to="/" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+          <LayoutDashboard size={16} /> Dashboard
+        </NavLink>
 
-      <div className="sidebar-user">
-        <div className="avatar">{getInitials(user?.name)}</div>
-        <div style={{ flex: 1 }}>
-          <div className="sidebar-user-name">{user?.name}</div>
-          <div className="sidebar-user-role" style={{ color: isAdmin ? 'var(--primary)' : 'var(--c-green)' }}>
-            {isAdmin ? 'Admin' : 'Member'}
+        {/* Projects — expandable */}
+        <div
+          className="sidebar-section-header"
+          onClick={() => setProjectsOpen(!projectsOpen)}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ChevronRight size={14} className={`chevron ${projectsOpen ? 'open' : ''}`} />
+            Projects
           </div>
         </div>
-        <button onClick={logout} style={{ background: 'none', color: 'var(--text-muted)' }} title="Logout">
-          <LogOut size={16} />
-        </button>
+
+        {projectsOpen && (
+          <div className="sidebar-projects">
+            {projects.map((proj, i) => (
+              <div
+                key={proj._id}
+                className={`sidebar-project-item ${activeProjectId === proj._id ? 'active' : ''}`}
+                onClick={() => navigate(`/projects/${proj._id}`)}
+              >
+                <div className="project-dot" style={{ background: dotColors[i % dotColors.length] }} />
+                {proj.name}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <NavLink to="/team" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+          <Users size={16} /> Teams
+        </NavLink>
+      </nav>
+
+      {/* bottom: settings */}
+      <div className="sidebar-bottom">
+        <NavLink to="/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+          <Settings size={16} /> Settings
+        </NavLink>
       </div>
     </aside>
   );

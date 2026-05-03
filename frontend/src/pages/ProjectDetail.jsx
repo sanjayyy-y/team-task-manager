@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, X } from 'lucide-react';
+import { Plus, MoreHorizontal, X, Trash2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const getInitials = (name) => {
@@ -11,7 +11,7 @@ const getInitials = (name) => {
   return p.length > 1 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : p[0][0].toUpperCase();
 };
 
-const avatarColors = ['#6d5ef8', '#4a9eff', '#3ecf8e', '#f5a623', '#f06060', '#e84393'];
+const avatarColors = ['#5e5ce6', '#5b9bf5', '#3ddc84', '#f5a623', '#f06060', '#a78bfa'];
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -22,6 +22,7 @@ export default function ProjectDetail() {
   const [members, setMembers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('total');
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
@@ -56,20 +57,44 @@ export default function ProjectDetail() {
     }
   };
 
+  // compute filter counts
+  const myTasks = tasks.filter(t => t.assignedTo?._id === user?._id);
+  const inProgress = tasks.filter(t => t.status === 'in-progress');
+  const completed = tasks.filter(t => t.status === 'done');
+  const overdue = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done');
+
+  const filters = [
+    { key: 'total',    label: 'Total tasks',  count: tasks.length,      colorClass: 'fc-white' },
+    { key: 'mine',     label: 'My tasks',      count: myTasks.length,    colorClass: 'fc-purple' },
+    { key: 'progress', label: 'In progress',   count: inProgress.length, colorClass: 'fc-blue' },
+    { key: 'done',     label: 'Completed',     count: completed.length,  colorClass: 'fc-green' },
+    { key: 'overdue',  label: 'Overdue',       count: overdue.length,    colorClass: 'fc-red' },
+  ];
+
+  // apply the active filter
+  const filteredTasks = (() => {
+    switch (activeFilter) {
+      case 'mine':     return myTasks;
+      case 'progress': return inProgress;
+      case 'done':     return completed;
+      case 'overdue':  return overdue;
+      default:         return tasks;
+    }
+  })();
+
+  const statusMeta = (task) => {
+    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
+    if (isOverdue) return { dot: 'var(--c-red)', pillClass: 'pill-red', label: 'Overdue' };
+    if (task.status === 'done') return { dot: 'var(--c-green)', pillClass: 'pill-green', label: 'Done' };
+    if (task.status === 'in-progress') return { dot: 'var(--c-blue)', pillClass: 'pill-blue', label: 'In progress' };
+    return { dot: 'var(--c-gray)', pillClass: 'pill-gray', label: 'Todo' };
+  };
+
   const handleCreateTask = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        title: taskTitle,
-        description: taskDesc,
-        status: taskStatus,
-        dueDate: taskDueDate || null,
-        priority: taskPriority,
-      };
-      // only admins get to pick who the task is assigned to
-      if (isAdmin) {
-        payload.assignedTo = taskAssignee || null;
-      }
+      const payload = { title: taskTitle, description: taskDesc, status: taskStatus, dueDate: taskDueDate || null, priority: taskPriority };
+      if (isAdmin) payload.assignedTo = taskAssignee || null;
       await api.post(`/projects/${id}/tasks`, payload);
       setShowTaskModal(false);
       setTaskTitle(''); setTaskDesc(''); setTaskAssignee(''); setTaskStatus('todo'); setTaskDueDate(''); setTaskPriority('medium');
@@ -92,16 +117,6 @@ export default function ProjectDetail() {
     }
   };
 
-  const handleStatusChange = async (taskId, newStatus) => {
-    try {
-      setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
-      await api.put(`/projects/${id}/tasks/${taskId}`, { status: newStatus });
-    } catch (err) {
-      fetchAll();
-      toast.error(err.response?.data?.message || 'Failed to update');
-    }
-  };
-
   const handleDeleteTask = async (taskId) => {
     if (!confirm('Delete this task?')) return;
     try {
@@ -113,93 +128,101 @@ export default function ProjectDetail() {
     }
   };
 
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
+      await api.put(`/projects/${id}/tasks/${taskId}`, { status: newStatus });
+    } catch (err) {
+      fetchAll();
+      toast.error(err.response?.data?.message || 'Failed to update');
+    }
+  };
+
   if (loading) return <div className="loading">Loading project...</div>;
   if (!project) return <div className="loading">Project not found</div>;
 
-  const columns = [
-    { id: 'todo',        title: 'Todo',        cls: 'col-todo' },
-    { id: 'in-progress', title: 'In progress', cls: 'col-progress' },
-    { id: 'done',        title: 'Done',        cls: 'col-done' },
-  ];
+  const filterLabel = filters.find(f => f.key === activeFilter)?.label || 'All tasks';
 
   return (
     <div>
-      <div className="project-header">
+      {/* Header */}
+      <div className="page-header">
         <div>
-          <div className="breadcrumb"><Link to="/projects">Projects</Link> / <span>{project.name}</span></div>
-          <h1 style={{ fontSize: '1.5rem' }}>{project.name}</h1>
+          <h1>{project.name}</h1>
+          <div className="subtitle">{members.length} members · {tasks.length} tasks</div>
         </div>
-        <div className="header-actions">
-          <div className="member-stack" onClick={() => setShowMemberModal(true)} style={{ cursor: 'pointer' }}>
-            {members.slice(0, 4).map((m, i) => (
-              <div key={m._id} className="avatar avatar-sm" style={{ background: avatarColors[i % avatarColors.length] }} title={m.userId.name}>
-                {getInitials(m.userId.name)}
-              </div>
-            ))}
-          </div>
-          {/* both roles can create tasks */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-ghost" onClick={() => setShowMemberModal(true)}>
+            <Users size={14} /> Team
+          </button>
           <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>
-            <Plus size={16} /> Add task
+            <Plus size={14} /> Add task
           </button>
         </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="kanban-board">
-        {columns.map(col => {
-          const colTasks = tasks.filter(t => t.status === col.id);
-          return (
-            <div key={col.id} className={`kanban-col ${col.cls}`}>
-              <div className="col-header">
-                <span className="col-title">{col.title}</span>
-                <span className="col-count">{colTasks.length}</span>
-              </div>
-              <div className="task-cards">
-                {colTasks.map(task => {
-                  const isMyTask = task.assignedTo?._id === user?._id || task.createdBy === user?._id;
-                  const canEdit = isAdmin || isMyTask;
-                  const isDone = task.status === 'done';
-                  const assignee = task.assignedTo;
-                  const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
-
-                  return (
-                    <div key={task._id} className={`kanban-card ${isDone ? 'done-card' : ''}`}>
-                      <h4>{task.title}</h4>
-                      {task.description && <p>{task.description}</p>}
-                      <div className="card-footer">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {assignee && (
-                            <div className="avatar avatar-xs" style={{ background: avatarColors[members.findIndex(m => m.userId._id === assignee._id) % avatarColors.length] }}>
-                              {getInitials(assignee.name)}
-                            </div>
-                          )}
-                          {canEdit && (
-                            <select value={task.status} onChange={e => handleStatusChange(task._id, e.target.value)} className="status-select">
-                              <option value="todo">Todo</option>
-                              <option value="in-progress">In progress</option>
-                              <option value="done">Done</option>
-                            </select>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {isDone ? <span className="card-done-label">Completed</span> : dueStr && <span className="card-due">{dueStr}</span>}
-                          {canEdit && (
-                            <button onClick={() => handleDeleteTask(task._id)} style={{ background: 'none', color: 'var(--c-red)', fontSize: '0.75rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }} title="Delete task">
-                              <X size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+      {/* Filter cards */}
+      <div className="filter-cards">
+        {filters.map(f => (
+          <div
+            key={f.key}
+            className={`filter-card ${activeFilter === f.key ? 'active' : ''}`}
+            onClick={() => setActiveFilter(f.key)}
+          >
+            <div className="fc-label">{f.label}</div>
+            <div className={`fc-value ${f.colorClass}`}>{f.count}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Create Task Modal — adapts based on role */}
+      {/* Task list */}
+      <div className="task-list-header">
+        <h2>{filterLabel} <span>({filteredTasks.length})</span></h2>
+      </div>
+
+      {filteredTasks.length === 0 ? (
+        <div className="empty-state">
+          <h3>No tasks here</h3>
+          <p>Try a different filter or add a new task.</p>
+        </div>
+      ) : (
+        filteredTasks.map(task => {
+          const meta = statusMeta(task);
+          const assignee = task.assignedTo;
+          const isMyTask = assignee?._id === user?._id || task.createdBy === user?._id;
+          const canEdit = isAdmin || isMyTask;
+          const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
+
+          return (
+            <div className="task-row" key={task._id}>
+              <div className="task-dot" style={{ background: meta.dot }} />
+              <div className="task-row-name">{task.title}</div>
+              {assignee && (
+                <div className="avatar avatar-xs" style={{ background: avatarColors[members.findIndex(m => m.userId._id === assignee._id) % avatarColors.length] }} title={assignee.name}>
+                  {getInitials(assignee.name)}
+                </div>
+              )}
+              {dueStr && <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>{dueStr}</span>}
+              {canEdit ? (
+                <select value={task.status} onChange={e => handleStatusChange(task._id, e.target.value)} className="status-select">
+                  <option value="todo">Todo</option>
+                  <option value="in-progress">In progress</option>
+                  <option value="done">Done</option>
+                </select>
+              ) : (
+                <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
+              )}
+              {canEdit && (
+                <button className="task-menu-btn" onClick={() => handleDeleteTask(task._id)} title="Delete">
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          );
+        })
+      )}
+
+      {/* Create Task Modal */}
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -214,7 +237,7 @@ export default function ProjectDetail() {
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <textarea className="form-input" value={taskDesc} onChange={e => setTaskDesc(e.target.value)} rows="3" placeholder="What needs to be done?" />
+                <textarea className="form-input" value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="What needs to be done?" />
               </div>
               <div className="modal-row">
                 {isAdmin ? (
@@ -273,21 +296,21 @@ export default function ProjectDetail() {
               <h2>Team members</h2>
               <button className="modal-close" onClick={() => setShowMemberModal(false)}>×</button>
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '16px' }}>
               {members.map((m, i) => (
-                <div key={m._id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0', borderBottom: '1px solid var(--border)' }}>
+                <div key={m._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
                   <div className="avatar avatar-sm" style={{ background: avatarColors[i % avatarColors.length] }}>{getInitials(m.userId.name)}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{m.userId.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{m.userId.email}</div>
+                    <div style={{ fontWeight: 500, fontSize: '13px' }}>{m.userId.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-2)' }}>{m.userId.email}</div>
                   </div>
                   <span className={`pill ${m.role === 'admin' ? 'pill-green' : 'pill-gray'}`}>{m.role}</span>
                 </div>
               ))}
             </div>
-            {isAdmin ? (
-              <form onSubmit={handleAddMember} style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                <h3 style={{ fontSize: '0.95rem', marginBottom: '1rem' }}>Invite member</h3>
+            {isAdmin && (
+              <form onSubmit={handleAddMember} style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                <h3 style={{ fontSize: '13px', marginBottom: '12px', fontWeight: 600 }}>Invite member</h3>
                 <div className="modal-row">
                   <div className="form-group">
                     <label>Email</label>
@@ -306,7 +329,8 @@ export default function ProjectDetail() {
                   <button type="submit" className="btn btn-primary">Send invite</button>
                 </div>
               </form>
-            ) : (
+            )}
+            {!isAdmin && (
               <div className="modal-footer">
                 <button className="btn btn-ghost" onClick={() => setShowMemberModal(false)}>Close</button>
               </div>

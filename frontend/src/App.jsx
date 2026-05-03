@@ -6,14 +6,14 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
-import MyTasks from './pages/MyTasks';
 import Team from './pages/Team';
+import Settings from './pages/Settings';
 import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   return (
     <>
-      <Toaster position="top-right" toastOptions={{ style: { background: '#28283a', color: '#f0f0f5', border: '1px solid #2e2e42' } }} />
+      <Toaster position="top-right" toastOptions={{ style: { background: '#222228', color: '#e8e8ed', border: '1px solid #2a2a32', fontSize: '13px' } }} />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -23,8 +23,8 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/tasks" element={<MyTasks />} />
             <Route path="/team" element={<Team />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
 
