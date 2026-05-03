@@ -44,12 +44,12 @@ export default function Signup() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full Name</label>
-            <input type="text" className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" required />
+            <input type="text" className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required />
           </div>
 
           <div className="form-group">
             <label>Email</label>
-            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required />
+            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" required />
           </div>
 
           <div className="form-group">
