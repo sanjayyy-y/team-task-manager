@@ -6,6 +6,7 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('member');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +19,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      await signup(name, email, password);
+      await signup(name, email, password, role);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create account');
@@ -43,39 +44,25 @@ export default function Signup() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full Name</label>
-            <input
-              type="text"
-              className="form-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
-              required
-            />
+            <input type="text" className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" required />
           </div>
 
           <div className="form-group">
             <label>Email</label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              required
-            />
+            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required />
           </div>
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="•••••••• (min 6 chars)"
-              required
-              minLength="6"
-            />
+            <input type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="•••••••• (min 6 chars)" required minLength="6" />
+          </div>
+
+          <div className="form-group">
+            <label>Role</label>
+            <select className="form-input" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="admin">Admin</option>
+              <option value="member">Member</option>
+            </select>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem' }} disabled={loading}>

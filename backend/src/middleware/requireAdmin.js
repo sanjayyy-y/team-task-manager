@@ -1,0 +1,9 @@
+// global role check — uses the role from the User model, not project membership
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+  next();
+};
+
+export default requireAdmin;

@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { LayoutDashboard, FolderKanban, CheckSquare, Users, LogOut } from 'lucide-react';
 
-// grab initials from a full name
 const getInitials = (name) => {
   if (!name) return '?';
   const parts = name.split(' ');
@@ -13,6 +12,7 @@ const getInitials = (name) => {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const links = [
     { name: 'Dashboard', path: '/',         icon: <LayoutDashboard size={18} /> },
@@ -46,7 +46,9 @@ export default function Sidebar() {
         <div className="avatar">{getInitials(user?.name)}</div>
         <div style={{ flex: 1 }}>
           <div className="sidebar-user-name">{user?.name}</div>
-          <div className="sidebar-user-role">Admin</div>
+          <div className="sidebar-user-role" style={{ color: isAdmin ? 'var(--primary)' : 'var(--c-green)' }}>
+            {isAdmin ? 'Admin' : 'Member'}
+          </div>
         </div>
         <button onClick={logout} style={{ background: 'none', color: 'var(--text-muted)' }} title="Logout">
           <LogOut size={16} />

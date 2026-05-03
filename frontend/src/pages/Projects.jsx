@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 import { Plus, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Projects() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -46,17 +49,19 @@ export default function Projects() {
       <div className="page-header">
         <div>
           <h1>Projects</h1>
-          <div className="date">Manage your team's work</div>
+          <div className="date">{isAdmin ? "Manage your team's work" : 'Projects you are part of'}</div>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={16} /> New Project
-        </button>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <Plus size={16} /> New Project
+          </button>
+        )}
       </div>
 
       {projects.length === 0 ? (
         <div className="empty-state">
           <h3>No projects yet</h3>
-          <p>Create your first project to start organising tasks.</p>
+          <p>{isAdmin ? 'Create your first project to start organising tasks.' : 'An admin needs to add you to a project first.'}</p>
         </div>
       ) : (
         <div className="projects-grid">

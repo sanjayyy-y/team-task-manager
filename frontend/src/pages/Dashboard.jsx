@@ -7,6 +7,8 @@ import { Plus } from 'lucide-react';
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
+
   const [stats, setStats] = useState(null);
   const [myTasks, setMyTasks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -38,7 +40,6 @@ export default function Dashboard() {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  // figure out the status info for the dot and pill
   const statusMeta = (task) => {
     const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
     if (isOverdue) return { dot: 'var(--c-red)', pillClass: 'pill-red', label: 'Overdue' };
@@ -47,9 +48,7 @@ export default function Dashboard() {
     return { dot: 'var(--c-gray)', pillClass: 'pill-gray', label: 'Todo' };
   };
 
-  // rough progress calc: done tasks / total tasks per project
-  const calcProgress = (proj) => {
-    // we don't have per-project task counts yet so use overall stats as a fallback
+  const calcProgress = () => {
     if (!stats || stats.totalTasks === 0) return 0;
     return Math.round((stats.byStatus.done / stats.totalTasks) * 100);
   };
@@ -61,12 +60,13 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <div className="date">{today}</div>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/projects')}>
-          <Plus size={16} /> New Project
-        </button>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => navigate('/projects')}>
+            <Plus size={16} /> New Project
+          </button>
+        )}
       </div>
 
-      {/* Stat cards */}
       <div className="stats-row">
         <div className="stat-card">
           <div className="label">Total tasks</div>
@@ -86,12 +86,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Two column: Recent tasks + Active projects */}
       <div className="dash-grid">
         <div className="dash-panel">
-          <h2>Recent tasks</h2>
+          <h2>{isAdmin ? 'Recent tasks' : 'Your tasks'}</h2>
           {myTasks.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No tasks assigned to you yet.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No tasks yet.</p>
           ) : (
             myTasks.map(task => {
               const meta = statusMeta(task);
@@ -112,7 +111,7 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No projects yet.</p>
           ) : (
             projects.map(proj => {
-              const pct = calcProgress(proj);
+              const pct = calcProgress();
               return (
                 <Link to={`/projects/${proj._id}`} key={proj._id} className="proj-item" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                   <div className="proj-item-name">{proj.name}</div>

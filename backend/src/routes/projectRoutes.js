@@ -11,15 +11,16 @@ import {
 } from '../controllers/projectController.js';
 import auth from '../middleware/auth.js';
 import { checkProjectMembership, requireRole } from '../middleware/rbac.js';
+import requireAdmin from '../middleware/requireAdmin.js';
 
 const router = Router();
 
 // all project routes require the user to be logged in
 router.use(auth);
 
-// create and list projects
+// create and list projects — only admins can create
 router.route('/')
-  .post(createProject)
+  .post(requireAdmin, createProject)
   .get(getProjects);
 
 // view, edit, or delete a specific project

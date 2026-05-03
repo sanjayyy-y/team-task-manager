@@ -4,7 +4,7 @@ import generateToken from '../utils/generateToken.js';
 // POST /api/auth/signup
 export const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -16,7 +16,7 @@ export const signup = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already in use' });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, role: role || 'member' });
 
     res.status(201).json({
       success: true,
@@ -24,7 +24,8 @@ export const signup = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id),
+        role: user.role,
+        token: generateToken(user._id, user.role),
       },
     });
   } catch (error) {
@@ -54,7 +55,8 @@ export const login = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id),
+        role: user.role,
+        token: generateToken(user._id, user.role),
       },
     });
   } catch (error) {
@@ -64,13 +66,49 @@ export const login = async (req, res) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  // req.user is already attached by the auth middleware
   res.json({
     success: true,
     data: {
       _id: req.user._id,
       name: req.user.name,
       email: req.user.email,
+      role: req.user.role,
     },
   });
+};
+
+// PUT /api/auth/me — update own profile
+export const updateMe = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (password) user.password = password; // pre-save hook will hash it
+
+    await user.save();
+
+    res.json({
+      success: true,
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/auth/me — delete own account
+export const deleteMe = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    res.json({ success: true, message: 'Account deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

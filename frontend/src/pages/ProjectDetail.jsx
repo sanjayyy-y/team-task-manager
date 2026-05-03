@@ -11,18 +11,18 @@ const getInitials = (name) => {
   return p.length > 1 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : p[0][0].toUpperCase();
 };
 
-// some distinct colours for avatars so they don't all look the same
 const avatarColors = ['#6d5ef8', '#4a9eff', '#3ecf8e', '#f5a623', '#f06060', '#e84393'];
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const isGlobalAdmin = user?.role === 'admin';
+
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // modals
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
 
@@ -37,8 +37,6 @@ export default function ProjectDetail() {
   // member form
   const [memberEmail, setMemberEmail] = useState('');
   const [memberRole, setMemberRole] = useState('member');
-
-  const isAdmin = members.find(m => m.userId?._id === user?._id)?.role === 'admin';
 
   useEffect(() => { fetchAll(); }, [id]);
 
@@ -100,6 +98,17 @@ export default function ProjectDetail() {
     }
   };
 
+  const handleDeleteTask = async (taskId) => {
+    if (!confirm('Delete this task?')) return;
+    try {
+      await api.delete(`/projects/${id}/tasks/${taskId}`);
+      setTasks(tasks.filter(t => t._id !== taskId));
+      toast.success('Task deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete');
+    }
+  };
+
   if (loading) return <div className="loading">Loading project...</div>;
   if (!project) return <div className="loading">Project not found</div>;
 
@@ -111,14 +120,12 @@ export default function ProjectDetail() {
 
   return (
     <div>
-      {/* header */}
       <div className="project-header">
         <div>
           <div className="breadcrumb"><Link to="/projects">Projects</Link> / <span>{project.name}</span></div>
           <h1 style={{ fontSize: '1.5rem' }}>{project.name}</h1>
         </div>
         <div className="header-actions">
-          {/* member avatars stacked */}
           <div className="member-stack" onClick={() => setShowMemberModal(true)} style={{ cursor: 'pointer' }}>
             {members.slice(0, 4).map((m, i) => (
               <div key={m._id} className="avatar avatar-sm" style={{ background: avatarColors[i % avatarColors.length] }} title={m.userId.name}>
@@ -126,7 +133,7 @@ export default function ProjectDetail() {
               </div>
             ))}
           </div>
-          {isAdmin && (
+          {isGlobalAdmin && (
             <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>
               <Plus size={16} /> Add task
             </button>
@@ -134,7 +141,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Kanban */}
+      {/* Kanban Board */}
       <div className="kanban-board">
         {columns.map(col => {
           const colTasks = tasks.filter(t => t.status === col.id);
@@ -146,7 +153,9 @@ export default function ProjectDetail() {
               </div>
               <div className="task-cards">
                 {colTasks.map(task => {
-                  const canEdit = isAdmin || task.assignedTo?._id === user?._id;
+                  const isMyTask = task.assignedTo?._id === user?._id;
+                  // admins can do anything, members can only change status on their own tasks
+                  const canChangeStatus = isGlobalAdmin || isMyTask;
                   const isDone = task.status === 'done';
                   const assignee = task.assignedTo;
                   const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
@@ -162,7 +171,7 @@ export default function ProjectDetail() {
                               {getInitials(assignee.name)}
                             </div>
                           )}
-                          {canEdit && (
+                          {canChangeStatus && (
                             <select value={task.status} onChange={e => handleStatusChange(task._id, e.target.value)} className="status-select">
                               <option value="todo">Todo</option>
                               <option value="in-progress">In progress</option>
@@ -170,7 +179,14 @@ export default function ProjectDetail() {
                             </select>
                           )}
                         </div>
-                        {isDone ? <span className="card-done-label">Completed</span> : dueStr && <span className="card-due">{dueStr}</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {isDone ? <span className="card-done-label">Completed</span> : dueStr && <span className="card-due">{dueStr}</span>}
+                          {isGlobalAdmin && (
+                            <button onClick={() => handleDeleteTask(task._id)} style={{ background: 'none', color: 'var(--c-red)', fontSize: '0.75rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }} title="Delete task">
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -181,7 +197,7 @@ export default function ProjectDetail() {
         })}
       </div>
 
-      {/* Create Task Modal — 2-column layout for fields */}
+      {/* Create Task Modal */}
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -260,7 +276,7 @@ export default function ProjectDetail() {
                 </div>
               ))}
             </div>
-            {isAdmin && (
+            {isGlobalAdmin && (
               <form onSubmit={handleAddMember} style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
                 <h3 style={{ fontSize: '0.95rem', marginBottom: '1rem' }}>Invite member</h3>
                 <div className="modal-row">
@@ -281,6 +297,11 @@ export default function ProjectDetail() {
                   <button type="submit" className="btn btn-primary">Send invite</button>
                 </div>
               </form>
+            )}
+            {!isGlobalAdmin && (
+              <div className="modal-footer">
+                <button className="btn btn-ghost" onClick={() => setShowMemberModal(false)}>Close</button>
+              </div>
             )}
           </div>
         </div>
