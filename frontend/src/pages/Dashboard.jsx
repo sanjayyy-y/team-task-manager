@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [myTasks, setMyTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [projectStats, setProjectStats] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +25,23 @@ export default function Dashboard() {
         ]);
         setStats(statsRes.data.data);
         setMyTasks(tasksRes.data.data.slice(0, 4));
-        setProjects(projRes.data.data.slice(0, 3));
+
+        const projs = projRes.data.data.slice(0, 3);
+        setProjects(projs);
+
+        // fetch per-project task counts for accurate progress bars
+        const statsMap = {};
+        await Promise.all(projs.map(async (proj) => {
+          try {
+            const taskRes = await api.get(`/projects/${proj._id}/tasks`);
+            const allTasks = taskRes.data.data;
+            const done = allTasks.filter(t => t.status === 'done').length;
+            statsMap[proj._id] = { total: allTasks.length, done };
+          } catch {
+            statsMap[proj._id] = { total: 0, done: 0 };
+          }
+        }));
+        setProjectStats(statsMap);
       } catch (err) {
         console.error('Dashboard load failed:', err);
       } finally {
@@ -48,11 +65,6 @@ export default function Dashboard() {
     return { dot: 'var(--c-gray)', pillClass: 'pill-gray', label: 'Todo' };
   };
 
-  const calcProgress = () => {
-    if (!stats || stats.totalTasks === 0) return 0;
-    return Math.round((stats.byStatus.done / stats.totalTasks) * 100);
-  };
-
   return (
     <div>
       <div className="page-header">
@@ -62,7 +74,7 @@ export default function Dashboard() {
         </div>
         {isAdmin && (
           <button className="btn btn-primary" onClick={() => navigate('/projects')}>
-            <Plus size={16} /> New Project
+            <Plus size={14} /> New Project
           </button>
         )}
       </div>
@@ -90,7 +102,7 @@ export default function Dashboard() {
         <div className="dash-panel">
           <h2>{isAdmin ? 'Recent tasks' : 'Your tasks'}</h2>
           {myTasks.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No tasks yet.</p>
+            <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No tasks yet.</p>
           ) : (
             myTasks.map(task => {
               const meta = statusMeta(task);
@@ -108,10 +120,11 @@ export default function Dashboard() {
         <div className="dash-panel">
           <h2>Active projects</h2>
           {projects.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No projects yet.</p>
+            <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No projects yet.</p>
           ) : (
             projects.map(proj => {
-              const pct = calcProgress();
+              const ps = projectStats[proj._id] || { total: 0, done: 0 };
+              const pct = ps.total > 0 ? Math.round((ps.done / ps.total) * 100) : 0;
               return (
                 <Link to={`/projects/${proj._id}`} key={proj._id} className="proj-item" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                   <div className="proj-item-name">{proj.name}</div>

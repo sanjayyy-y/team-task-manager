@@ -112,3 +112,14 @@ export const deleteMe = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// GET /api/auth/users — list all registered users (for adding to teams)
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('name email role').sort('name');
+    res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

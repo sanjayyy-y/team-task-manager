@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
-import { Plus } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const getInitials = (name) => {
@@ -10,7 +10,7 @@ const getInitials = (name) => {
   return p.length > 1 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : p[0][0].toUpperCase();
 };
 
-const avatarColors = ['#6d5ef8', '#4a9eff', '#3ecf8e', '#f5a623', '#f06060', '#e84393'];
+const avatarColors = ['#5e5ce6', '#5b9bf5', '#3ddc84', '#f5a623', '#f06060', '#a78bfa'];
 
 export default function Team() {
   const { user } = useAuth();
@@ -23,15 +23,24 @@ export default function Team() {
   const [memberTasks, setMemberTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // create team modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [teamName, setTeamName] = useState('');
+  const [teamDesc, setTeamDesc] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  // add member modal
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+
   // assign task modal
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignTitle, setAssignTitle] = useState('');
   const [assignDesc, setAssignDesc] = useState('');
   const [assignDueDate, setAssignDueDate] = useState('');
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  useEffect(() => { fetchProjects(); }, []);
 
   const fetchProjects = async () => {
     try {
@@ -53,7 +62,6 @@ export default function Team() {
       const res = await api.get(`/projects/${project._id}`);
       const mems = res.data.data.members;
       setMembers(mems);
-      // auto-select the first member
       if (mems.length > 0) {
         selectMember(mems[0], project._id);
       } else {
@@ -72,8 +80,52 @@ export default function Team() {
       const res = await api.get(`/projects/${pid}/tasks?assignedTo=${member.userId._id}`);
       setMemberTasks(res.data.data);
     } catch (err) {
-      console.error(err);
       setMemberTasks([]);
+    }
+  };
+
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      const res = await api.post('/projects', { name: teamName, description: teamDesc });
+      toast.success('Team created');
+      setShowCreateModal(false);
+      setTeamName(''); setTeamDesc('');
+      await fetchProjects();
+      // select the new team
+      selectProject(res.data.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create team');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const openAddMember = async () => {
+    setShowAddMember(true);
+    try {
+      const res = await api.get('/auth/users');
+      setAllUsers(res.data.data);
+    } catch (err) {
+      toast.error('Failed to load users');
+    }
+  };
+
+  const handleAddUser = async (userToAdd) => {
+    if (!activeProject) return;
+    // check if already a member
+    const exists = members.find(m => m.userId._id === userToAdd._id);
+    if (exists) {
+      toast.error('Already a member of this team');
+      return;
+    }
+    try {
+      await api.post(`/projects/${activeProject._id}/members`, { email: userToAdd.email, role: 'member' });
+      toast.success(`${userToAdd.name} added to ${activeProject.name}`);
+      selectProject(activeProject);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add member');
     }
   };
 
@@ -82,17 +134,15 @@ export default function Team() {
     if (!selectedMember || !activeProject) return;
     try {
       await api.post(`/projects/${activeProject._id}/tasks`, {
-        title: assignTitle,
-        description: assignDesc,
-        assignedTo: selectedMember.userId._id,
-        dueDate: assignDueDate || null,
+        title: assignTitle, description: assignDesc,
+        assignedTo: selectedMember.userId._id, dueDate: assignDueDate || null,
       });
       setShowAssignModal(false);
       setAssignTitle(''); setAssignDesc(''); setAssignDueDate('');
       selectMember(selectedMember);
       toast.success(`Task assigned to ${selectedMember.userId.name}`);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to assign task');
+      toast.error(err.response?.data?.message || 'Failed to assign');
     }
   };
 
@@ -108,6 +158,14 @@ export default function Team() {
 
   const completed = memberTasks.filter(t => t.status === 'done').length;
   const pending = memberTasks.length - completed;
+  const isMe = selectedMember?.userId?._id === user?._id;
+
+  // filter users by search
+  const memberIds = members.map(m => m.userId._id);
+  const filteredUsers = allUsers.filter(u =>
+    !memberIds.includes(u._id) &&
+    (u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase()))
+  );
 
   return (
     <div>
@@ -115,23 +173,25 @@ export default function Team() {
       <div className="page-header">
         <div>
           <h1>Teams</h1>
-          <div className="date">Manage your teams and view member tasks</div>
+          <div className="subtitle">
+            {activeProject ? `${activeProject.name} · ${members.length} members` : 'Manage your teams and view member tasks'}
+          </div>
         </div>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={() => window.location.href = '/projects'}>
-            <Plus size={16} /> New team
+          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+            <Plus size={14} /> New team
           </button>
         )}
       </div>
 
-      {/* Team tabs */}
       {projects.length === 0 ? (
         <div className="empty-state">
           <h3>No teams yet</h3>
-          <p>{isAdmin ? 'Create a project to get started.' : 'An admin needs to add you to a project.'}</p>
+          <p>{isAdmin ? 'Create your first team to start collaborating.' : 'An admin needs to add you to a team.'}</p>
         </div>
       ) : (
         <>
+          {/* Team tabs */}
           <div className="team-tabs">
             {projects.map(proj => (
               <button
@@ -145,7 +205,7 @@ export default function Team() {
           </div>
 
           <div className="team-layout">
-            {/* Left: Member sidebar */}
+            {/* Left: member sidebar */}
             <div className="team-sidebar">
               <div className="team-sidebar-header">Members · {members.length}</div>
               {members.map((m, i) => (
@@ -163,28 +223,38 @@ export default function Team() {
                   </div>
                 </div>
               ))}
+              {isAdmin && (
+                <div
+                  style={{ padding: '10px 14px', marginTop: '4px', cursor: 'pointer', color: 'var(--primary)', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}
+                  onClick={openAddMember}
+                >
+                  <UserPlus size={14} /> Add member
+                </div>
+              )}
             </div>
 
-            {/* Right: Selected member's detail */}
+            {/* Right: selected member detail */}
             <div className="team-detail">
               {selectedMember ? (
                 <>
-                  {/* Member header */}
                   <div className="team-detail-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div className="avatar" style={{ width: 44, height: 44, fontSize: '0.95rem', background: avatarColors[members.indexOf(selectedMember) % avatarColors.length] }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div className="avatar avatar-lg" style={{ background: avatarColors[members.indexOf(selectedMember) % avatarColors.length] }}>
                         {getInitials(selectedMember.userId.name)}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{selectedMember.userId.name}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {selectedMember.userId.name}
+                          {isMe && <span className="pill pill-blue" style={{ fontSize: '10px' }}>You</span>}
+                        </div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-2)' }}>
                           {selectedMember.role === 'admin' ? 'Admin' : 'Member'} · {activeProject?.name}
                         </div>
                       </div>
                     </div>
                     {isAdmin && (
                       <button className="btn btn-primary" onClick={() => setShowAssignModal(true)}>
-                        <Plus size={16} /> Assign task
+                        <Plus size={14} /> Assign task
                       </button>
                     )}
                   </div>
@@ -205,22 +275,20 @@ export default function Team() {
                     </div>
                   </div>
 
-                  {/* Task list */}
-                  <div style={{ marginTop: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Tasks</h3>
+                  {/* Tasks */}
+                  <div style={{ marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px' }}>Tasks ({memberTasks.length})</h3>
                     {memberTasks.length === 0 ? (
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No tasks assigned to this member.</p>
+                      <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No tasks assigned.</p>
                     ) : (
                       memberTasks.map(task => {
                         const meta = statusMeta(task);
-                        const dueStr = task.dueDate
-                          ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })
-                          : null;
+                        const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
                         return (
                           <div className="task-row" key={task._id}>
                             <div className="task-dot" style={{ background: meta.dot }} />
                             <div className="task-row-name" style={{ flex: 1 }}>{task.title}</div>
-                            {dueStr && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: '0.75rem' }}>{dueStr}</span>}
+                            {dueStr && <span style={{ fontSize: '12px', color: 'var(--text-2)', marginRight: '8px' }}>{dueStr}</span>}
                             <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
                           </div>
                         );
@@ -229,11 +297,80 @@ export default function Team() {
                   </div>
                 </>
               ) : (
-                <p style={{ color: 'var(--text-muted)', padding: '2rem' }}>Select a member to view their tasks.</p>
+                <p style={{ color: 'var(--text-2)', padding: '24px', fontSize: '13px' }}>Select a member to view their tasks.</p>
               )}
             </div>
           </div>
         </>
+      )}
+
+      {/* Create Team Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create new team</h2>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleCreateTeam}>
+              <div className="form-group">
+                <label>Team name</label>
+                <input type="text" className="form-input" value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="e.g. Team Alpha" required autoFocus />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea className="form-input" value={teamDesc} onChange={e => setTeamDesc(e.target.value)} placeholder="What does this team work on?" />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={creating}>{creating ? 'Creating...' : 'Create team'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal — pick from registered users */}
+      {showAddMember && (
+        <div className="modal-overlay" onClick={() => setShowAddMember(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add member to {activeProject?.name}</h2>
+              <button className="modal-close" onClick={() => setShowAddMember(false)}>×</button>
+            </div>
+            <div className="form-group">
+              <input
+                type="text" className="form-input"
+                placeholder="Search by name or email..."
+                value={userSearch} onChange={e => setUserSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+              {filteredUsers.length === 0 ? (
+                <p style={{ color: 'var(--text-2)', fontSize: '13px', padding: '12px 0' }}>No users found.</p>
+              ) : (
+                filteredUsers.map((u, i) => (
+                  <div key={u._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderBottom: '1px solid var(--border)' }}>
+                    <div className="avatar avatar-sm" style={{ background: avatarColors[i % avatarColors.length] }}>
+                      {getInitials(u.name)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 500 }}>{u.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-2)' }}>{u.email}</div>
+                    </div>
+                    <button className="btn btn-ghost" style={{ padding: '4px 10px' }} onClick={() => handleAddUser(u)}>
+                      Add
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => { setShowAddMember(false); setUserSearch(''); }}>Done</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Assign Task Modal */}
@@ -251,7 +388,7 @@ export default function Team() {
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <textarea className="form-input" value={assignDesc} onChange={e => setAssignDesc(e.target.value)} rows="3" placeholder="What needs to be done?" />
+                <textarea className="form-input" value={assignDesc} onChange={e => setAssignDesc(e.target.value)} placeholder="What needs to be done?" />
               </div>
               <div className="form-group">
                 <label>Due date</label>
