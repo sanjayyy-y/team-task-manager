@@ -1,35 +1,44 @@
 import Task from '../models/Task.js';
 import ProjectMember from '../models/ProjectMember.js';
 
-// create a new task (admins only)
+// create a task
+// admins can assign to anyone, members auto-assign to themselves
 export const createTask = async (req, res) => {
   try {
-    const { title, description, assignedTo, priority, dueDate } = req.body;
+    const { title, description, assignedTo, priority, dueDate, status } = req.body;
     const projectId = req.params.projectId;
+    const isAdmin = req.user.role === 'admin';
 
     if (!title) {
       return res.status(400).json({ success: false, message: 'Task title is required' });
     }
 
-    // if assigning to someone, make sure they are actually in the project
-    if (assignedTo) {
+    let finalAssignee = null;
+
+    if (isAdmin && assignedTo) {
+      // admin is assigning to someone — verify they're in the project
       const isMember = await ProjectMember.findOne({ projectId, userId: assignedTo });
       if (!isMember) {
         return res.status(400).json({ success: false, message: 'Assignee is not a member of this project' });
       }
+      finalAssignee = assignedTo;
+    } else if (!isAdmin) {
+      // member creating a task — force assign to themselves
+      finalAssignee = req.user._id;
     }
 
     const task = await Task.create({
       title,
       description,
-      status: 'todo',
+      status: status || 'todo',
       priority: priority || 'medium',
       projectId,
-      assignedTo: assignedTo || null,
+      assignedTo: finalAssignee,
       createdBy: req.user._id,
       dueDate: dueDate || null,
     });
 
+    await task.populate('assignedTo', 'name email');
     res.status(201).json({ success: true, data: task });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -40,17 +49,15 @@ export const createTask = async (req, res) => {
 export const getProjectTasks = async (req, res) => {
   try {
     const projectId = req.params.projectId;
-    const { status, assignedTo } = req.query; // optional filters
+    const { status, assignedTo } = req.query;
 
-    // build the query dynamically based on what they want
     const query = { projectId };
     if (status) query.status = status;
     if (assignedTo) query.assignedTo = assignedTo;
 
-    // fetch tasks and include assignee details
     const tasks = await Task.find(query)
       .populate('assignedTo', 'name email')
-      .sort('dueDate'); // sort by due date so urgent stuff is up top
+      .sort('dueDate');
 
     res.json({ success: true, data: tasks });
   } catch (error) {
@@ -75,11 +82,12 @@ export const getTaskById = async (req, res) => {
   }
 };
 
-// update a task. admins can change anything, members can only change the status of their own tasks.
+// update a task
+// admins can change anything. members can edit their own tasks (title, desc, status, priority, dueDate) but NOT the assignee.
 export const updateTask = async (req, res) => {
   try {
     const { taskId, projectId } = req.params;
-    const role = req.projectRole; // we get this from the checkProjectMembership middleware
+    const isAdmin = req.user.role === 'admin';
 
     let task = await Task.findOne({ _id: taskId, projectId });
 
@@ -87,24 +95,22 @@ export const updateTask = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
-    // if they are just a regular member, enforce the strict rules
-    if (role === 'member') {
-      // they can only edit their own tasks
-      if (task.assignedTo?.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ success: false, message: 'You can only update your own tasks' });
-      }
+    const isOwner = task.assignedTo?.toString() === req.user._id.toString()
+                 || task.createdBy?.toString() === req.user._id.toString();
 
-      // they can only change the status, ignore any other fields they sent
-      task.status = req.body.status || task.status;
-    } else {
-      // they are an admin, let them change whatever they want
-      task.title = req.body.title || task.title;
-      task.description = req.body.description !== undefined ? req.body.description : task.description;
-      task.status = req.body.status || task.status;
-      task.priority = req.body.priority || task.priority;
-      task.dueDate = req.body.dueDate !== undefined ? req.body.dueDate : task.dueDate;
-      
-      // changing assignment requires checking if the new person is in the project
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ success: false, message: 'You can only update your own tasks' });
+    }
+
+    // everyone can update these fields on their own tasks
+    if (req.body.title) task.title = req.body.title;
+    if (req.body.description !== undefined) task.description = req.body.description;
+    if (req.body.status) task.status = req.body.status;
+    if (req.body.priority) task.priority = req.body.priority;
+    if (req.body.dueDate !== undefined) task.dueDate = req.body.dueDate;
+
+    // only admins can change the assignee
+    if (isAdmin) {
       if (req.body.assignedTo && req.body.assignedTo !== task.assignedTo?.toString()) {
         const isMember = await ProjectMember.findOne({ projectId, userId: req.body.assignedTo });
         if (!isMember) {
@@ -112,13 +118,11 @@ export const updateTask = async (req, res) => {
         }
         task.assignedTo = req.body.assignedTo;
       } else if (req.body.assignedTo === null) {
-        task.assignedTo = null; // unassign
+        task.assignedTo = null;
       }
     }
 
     await task.save();
-    
-    // repopulate the assignee info before sending back
     await task.populate('assignedTo', 'name email');
 
     res.json({ success: true, data: task });
@@ -127,15 +131,24 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// delete a task (admins only)
+// delete a task — admins can delete any, members can delete their own
 export const deleteTask = async (req, res) => {
   try {
-    const task = await Task.findOneAndDelete({ _id: req.params.taskId, projectId: req.params.projectId });
+    const task = await Task.findOne({ _id: req.params.taskId, projectId: req.params.projectId });
 
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
+    const isAdmin = req.user.role === 'admin';
+    const isOwner = task.assignedTo?.toString() === req.user._id.toString()
+                 || task.createdBy?.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own tasks' });
+    }
+
+    await Task.findByIdAndDelete(task._id);
     res.json({ success: true, message: 'Task deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -153,14 +166,13 @@ export const getMyTasks = async (req, res) => {
       query.status = status;
     }
 
-    // if they want overdue tasks, look for tasks due before right now that aren't done yet
     if (overdue === 'true') {
       query.dueDate = { $lt: new Date() };
       query.status = { $ne: 'done' };
     }
 
     const tasks = await Task.find(query)
-      .populate('projectId', 'name') // include project name so they know where it belongs
+      .populate('projectId', 'name')
       .sort('dueDate');
 
     res.json({ success: true, data: tasks });

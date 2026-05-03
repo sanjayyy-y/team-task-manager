@@ -16,7 +16,7 @@ const avatarColors = ['#6d5ef8', '#4a9eff', '#3ecf8e', '#f5a623', '#f06060', '#e
 export default function ProjectDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const isGlobalAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
@@ -59,14 +59,18 @@ export default function ProjectDetail() {
   const handleCreateTask = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`/projects/${id}/tasks`, {
+      const payload = {
         title: taskTitle,
         description: taskDesc,
-        assignedTo: taskAssignee || null,
         status: taskStatus,
         dueDate: taskDueDate || null,
         priority: taskPriority,
-      });
+      };
+      // only admins get to pick who the task is assigned to
+      if (isAdmin) {
+        payload.assignedTo = taskAssignee || null;
+      }
+      await api.post(`/projects/${id}/tasks`, payload);
       setShowTaskModal(false);
       setTaskTitle(''); setTaskDesc(''); setTaskAssignee(''); setTaskStatus('todo'); setTaskDueDate(''); setTaskPriority('medium');
       fetchAll();
@@ -133,11 +137,10 @@ export default function ProjectDetail() {
               </div>
             ))}
           </div>
-          {isGlobalAdmin && (
-            <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>
-              <Plus size={16} /> Add task
-            </button>
-          )}
+          {/* both roles can create tasks */}
+          <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>
+            <Plus size={16} /> Add task
+          </button>
         </div>
       </div>
 
@@ -153,9 +156,8 @@ export default function ProjectDetail() {
               </div>
               <div className="task-cards">
                 {colTasks.map(task => {
-                  const isMyTask = task.assignedTo?._id === user?._id;
-                  // admins can do anything, members can only change status on their own tasks
-                  const canChangeStatus = isGlobalAdmin || isMyTask;
+                  const isMyTask = task.assignedTo?._id === user?._id || task.createdBy === user?._id;
+                  const canEdit = isAdmin || isMyTask;
                   const isDone = task.status === 'done';
                   const assignee = task.assignedTo;
                   const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
@@ -171,7 +173,7 @@ export default function ProjectDetail() {
                               {getInitials(assignee.name)}
                             </div>
                           )}
-                          {canChangeStatus && (
+                          {canEdit && (
                             <select value={task.status} onChange={e => handleStatusChange(task._id, e.target.value)} className="status-select">
                               <option value="todo">Todo</option>
                               <option value="in-progress">In progress</option>
@@ -181,7 +183,7 @@ export default function ProjectDetail() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {isDone ? <span className="card-done-label">Completed</span> : dueStr && <span className="card-due">{dueStr}</span>}
-                          {isGlobalAdmin && (
+                          {canEdit && (
                             <button onClick={() => handleDeleteTask(task._id)} style={{ background: 'none', color: 'var(--c-red)', fontSize: '0.75rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }} title="Delete task">
                               <X size={14} />
                             </button>
@@ -197,7 +199,7 @@ export default function ProjectDetail() {
         })}
       </div>
 
-      {/* Create Task Modal */}
+      {/* Create Task Modal — adapts based on role */}
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -215,15 +217,22 @@ export default function ProjectDetail() {
                 <textarea className="form-input" value={taskDesc} onChange={e => setTaskDesc(e.target.value)} rows="3" placeholder="What needs to be done?" />
               </div>
               <div className="modal-row">
-                <div className="form-group">
-                  <label>Assign to</label>
-                  <select className="form-input" value={taskAssignee} onChange={e => setTaskAssignee(e.target.value)}>
-                    <option value="">Unassigned</option>
-                    {members.map(m => (
-                      <option key={m.userId._id} value={m.userId._id}>{m.userId.name} ({m.role})</option>
-                    ))}
-                  </select>
-                </div>
+                {isAdmin ? (
+                  <div className="form-group">
+                    <label>Assign to</label>
+                    <select className="form-input" value={taskAssignee} onChange={e => setTaskAssignee(e.target.value)}>
+                      <option value="">Unassigned</option>
+                      {members.map(m => (
+                        <option key={m.userId._id} value={m.userId._id}>{m.userId.name} ({m.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>Assigned to</label>
+                    <input type="text" className="form-input" value="You (auto-assigned)" disabled />
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Status</label>
                   <select className="form-input" value={taskStatus} onChange={e => setTaskStatus(e.target.value)}>
@@ -276,7 +285,7 @@ export default function ProjectDetail() {
                 </div>
               ))}
             </div>
-            {isGlobalAdmin && (
+            {isAdmin ? (
               <form onSubmit={handleAddMember} style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
                 <h3 style={{ fontSize: '0.95rem', marginBottom: '1rem' }}>Invite member</h3>
                 <div className="modal-row">
@@ -297,8 +306,7 @@ export default function ProjectDetail() {
                   <button type="submit" className="btn btn-primary">Send invite</button>
                 </div>
               </form>
-            )}
-            {!isGlobalAdmin && (
+            ) : (
               <div className="modal-footer">
                 <button className="btn btn-ghost" onClick={() => setShowMemberModal(false)}>Close</button>
               </div>

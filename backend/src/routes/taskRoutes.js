@@ -7,7 +7,7 @@ import {
   deleteTask,
 } from '../controllers/taskController.js';
 import auth from '../middleware/auth.js';
-import { checkProjectMembership, requireRole } from '../middleware/rbac.js';
+import { checkProjectMembership } from '../middleware/rbac.js';
 
 // mergeParams is crucial here so we can grab the :projectId from the URL
 const router = Router({ mergeParams: true });
@@ -17,12 +17,12 @@ router.use(auth);
 router.use(checkProjectMembership);
 
 router.route('/')
-  .post(requireRole('admin'), createTask) // only admins can make new tasks
-  .get(getProjectTasks); // anyone in the project can view the list
+  .post(createTask) // both roles can create — controller handles assignment rules
+  .get(getProjectTasks);
 
 router.route('/:taskId')
-  .get(getTaskById) // anyone can view details
-  .put(updateTask) // both can update, but the controller restricts what members can touch
-  .delete(requireRole('admin'), deleteTask); // only admins can trash things
+  .get(getTaskById)
+  .put(updateTask) // controller checks ownership for members
+  .delete(deleteTask); // controller checks ownership for members
 
 export default router;
