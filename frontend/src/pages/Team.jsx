@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
-import { Plus, UserPlus, Trash2 } from 'lucide-react';
+import { Plus, UserPlus, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const getInitials = (name) => {

@@ -138,6 +138,20 @@ export default function ProjectDetail() {
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!isAdmin) return;
+    if (!confirm(`Are you sure you want to delete the project "${project.name}"? This action cannot be undone and will delete all tasks within.`)) return;
+    try {
+      await api.delete(`/projects/${id}`);
+      toast.success('Project deleted successfully');
+      // Redirect back to dashboard or projects list after deletion
+      window.location.href = '/'; 
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete project');
+    }
+  };
+
+
   if (loading) return <div className="loading">Loading project...</div>;
   if (!project) return <div className="loading">Project not found</div>;
 
@@ -152,6 +166,11 @@ export default function ProjectDetail() {
           <div className="subtitle">{members.length} members · {tasks.length} tasks</div>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          {isAdmin && (
+            <button className="btn btn-ghost" onClick={handleDeleteProject} title="Delete Project">
+              <Trash2 size={14} style={{ color: 'var(--c-red)' }} />
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={() => setShowMemberModal(true)}>
             <Users size={14} /> Team
           </button>
