@@ -3,6 +3,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import { LayoutDashboard, Users, Settings, ChevronRight, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Skeleton from '../ui/Skeleton';
 
 const dotColors = ['#5b9bf5', '#3ddc84', '#f5a623', '#a78bfa', '#f06060', '#5e5ce6'];
 
@@ -20,23 +22,24 @@ export default function Sidebar() {
 
   const [projects, setProjects] = useState([]);
   const [projectsOpen, setProjectsOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/projects').then(res => setProjects(res.data.data)).catch(() => {});
+    api.get('/projects')
+      .then(res => setProjects(res.data.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  // figure out if we're currently on a project page
   const projectMatch = location.pathname.match(/^\/projects\/([a-f0-9]+)/);
   const activeProjectId = projectMatch ? projectMatch[1] : null;
 
-  // auto-expand if we land on a project page
   useEffect(() => {
     if (activeProjectId) setProjectsOpen(true);
   }, [activeProjectId]);
 
   return (
     <aside className="sidebar">
-      {/* top: logo + user */}
       <div className="sidebar-top">
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">T</div>
@@ -54,13 +57,11 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* nav */}
       <nav className="sidebar-nav">
         <NavLink to="/" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
           <LayoutDashboard size={16} /> Dashboard
         </NavLink>
 
-        {/* Projects — expandable */}
         <div
           className="sidebar-section-header"
           onClick={() => setProjectsOpen(!projectsOpen)}
@@ -71,20 +72,35 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {projectsOpen && (
-          <div className="sidebar-projects">
-            {projects.map((proj, i) => (
-              <div
-                key={proj._id}
-                className={`sidebar-project-item ${activeProjectId === proj._id ? 'active' : ''}`}
-                onClick={() => navigate(`/projects/${proj._id}`)}
-              >
-                <div className="project-dot" style={{ background: dotColors[i % dotColors.length] }} />
-                {proj.name}
-              </div>
-            ))}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {projectsOpen && (
+            <motion.div 
+              className="sidebar-projects"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: 'hidden' }}
+            >
+              {loading ? (
+                <div style={{ padding: '4px 8px' }}>
+                  {[1, 2, 3].map(i => <Skeleton key={i} height="24px" style={{ marginBottom: '6px' }} />)}
+                </div>
+              ) : (
+                projects.map((proj, i) => (
+                  <div
+                    key={proj._id}
+                    className={`sidebar-project-item ${activeProjectId === proj._id ? 'active' : ''}`}
+                    onClick={() => navigate(`/projects/${proj._id}`)}
+                  >
+                    <div className="project-dot" style={{ background: dotColors[i % dotColors.length] }} />
+                    {proj.name}
+                  </div>
+                ))
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isAdmin && (
           <NavLink to="/team" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
@@ -93,7 +109,6 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* bottom: settings */}
       <div className="sidebar-bottom">
         <NavLink to="/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
           <Settings size={16} /> Settings

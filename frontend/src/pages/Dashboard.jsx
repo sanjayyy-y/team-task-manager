@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 import { Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import Skeleton from '../components/ui/Skeleton';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -51,11 +53,40 @@ export default function Dashboard() {
     load();
   }, []);
 
-  if (loading) return <div className="loading">Loading dashboard...</div>;
-
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
+
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        <div className="page-header">
+          <div>
+            <Skeleton width="150px" height="32px" style={{ marginBottom: '8px' }} />
+            <Skeleton width="200px" height="16px" />
+          </div>
+        </div>
+        <div className="stats-row">
+          {[1, 2, 3, 4].map(i => (
+            <div className="stat-card" key={i}>
+              <Skeleton width="80px" height="14px" style={{ marginBottom: '12px' }} />
+              <Skeleton width="40px" height="28px" />
+            </div>
+          ))}
+        </div>
+        <div className="dash-grid">
+          <div className="dash-panel">
+            <Skeleton width="120px" height="24px" style={{ marginBottom: '16px' }} />
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} height="48px" style={{ marginBottom: '8px' }} />)}
+          </div>
+          <div className="dash-panel">
+            <Skeleton width="120px" height="24px" style={{ marginBottom: '16px' }} />
+            {[1, 2, 3].map(i => <Skeleton key={i} height="70px" style={{ marginBottom: '8px' }} />)}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   const statusMeta = (task) => {
     const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
@@ -66,7 +97,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
       <div className="page-header">
         <div>
           <h1>Dashboard</h1>
@@ -80,22 +111,22 @@ export default function Dashboard() {
       </div>
 
       <div className="stats-row">
-        <div className="stat-card">
+        <motion.div whileTap={{ scale: 0.97 }} className="stat-card">
           <div className="label">Total tasks</div>
           <div className="value value-white">{stats?.totalTasks || 0}</div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div whileTap={{ scale: 0.97 }} className="stat-card">
           <div className="label">In progress</div>
           <div className="value value-blue">{stats?.byStatus?.inProgress || 0}</div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div whileTap={{ scale: 0.97 }} className="stat-card">
           <div className="label">Completed</div>
           <div className="value value-green">{stats?.byStatus?.done || 0}</div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div whileTap={{ scale: 0.97 }} className="stat-card">
           <div className="label">Overdue</div>
           <div className="value value-red">{stats?.overdue || 0}</div>
-        </div>
+        </motion.div>
       </div>
 
       <div className="dash-grid">
@@ -104,14 +135,17 @@ export default function Dashboard() {
           {myTasks.length === 0 ? (
             <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No tasks yet.</p>
           ) : (
-            myTasks.map(task => {
+            myTasks.map((task, i) => {
               const meta = statusMeta(task);
               return (
-                <div className="task-row" key={task._id}>
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
+                  className="task-row" key={task._id}
+                >
                   <div className="task-dot" style={{ background: meta.dot }} />
                   <div className="task-row-name">{task.title}</div>
                   <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
-                </div>
+                </motion.div>
               );
             })
           )}
@@ -122,22 +156,24 @@ export default function Dashboard() {
           {projects.length === 0 ? (
             <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No projects yet.</p>
           ) : (
-            projects.map(proj => {
+            projects.map((proj, i) => {
               const ps = projectStats[proj._id] || { total: 0, done: 0 };
               const pct = ps.total > 0 ? Math.round((ps.done / ps.total) * 100) : 0;
               return (
-                <Link to={`/projects/${proj._id}`} key={proj._id} className="proj-item" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
-                  <div className="proj-item-name">{proj.name}</div>
-                  <div className="progress-bar-bg">
-                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="proj-meta">{pct}% complete</div>
-                </Link>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} key={proj._id}>
+                  <Link to={`/projects/${proj._id}`} className="proj-item" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+                    <div className="proj-item-name">{proj.name}</div>
+                    <div className="progress-bar-bg">
+                      <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="proj-meta">{pct}% complete</div>
+                  </Link>
+                </motion.div>
               );
             })
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

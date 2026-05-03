@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, MoreHorizontal, X, Trash2, Users } from 'lucide-react';
+import { Plus, Trash2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import Skeleton from '../components/ui/Skeleton';
+import TaskRow from '../components/ui/TaskRow';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -57,7 +60,6 @@ export default function ProjectDetail() {
     }
   };
 
-  // compute filter counts
   const myTasks = tasks.filter(t => t.assignedTo?._id === user?._id);
   const inProgress = tasks.filter(t => t.status === 'in-progress');
   const completed = tasks.filter(t => t.status === 'done');
@@ -71,7 +73,6 @@ export default function ProjectDetail() {
     { key: 'overdue',  label: 'Overdue',       count: overdue.length,    colorClass: 'fc-red' },
   ];
 
-  // apply the active filter
   const filteredTasks = (() => {
     switch (activeFilter) {
       case 'mine':     return myTasks;
@@ -81,14 +82,6 @@ export default function ProjectDetail() {
       default:         return tasks;
     }
   })();
-
-  const statusMeta = (task) => {
-    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
-    if (isOverdue) return { dot: 'var(--c-red)', pillClass: 'pill-red', label: 'Overdue' };
-    if (task.status === 'done') return { dot: 'var(--c-green)', pillClass: 'pill-green', label: 'Done' };
-    if (task.status === 'in-progress') return { dot: 'var(--c-blue)', pillClass: 'pill-blue', label: 'In progress' };
-    return { dot: 'var(--c-gray)', pillClass: 'pill-gray', label: 'Todo' };
-  };
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
@@ -117,48 +110,94 @@ export default function ProjectDetail() {
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
-    if (!confirm('Delete this task?')) return;
-    try {
-      await api.delete(`/projects/${id}/tasks/${taskId}`);
-      setTasks(tasks.filter(t => t._id !== taskId));
-      toast.success('Task deleted');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete');
-    }
-  };
-
   const handleStatusChange = async (taskId, newStatus) => {
+    const originalTasks = [...tasks];
     try {
       setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
       await api.put(`/projects/${id}/tasks/${taskId}`, { status: newStatus });
     } catch (err) {
-      fetchAll();
+      setTasks(originalTasks);
       toast.error(err.response?.data?.message || 'Failed to update');
     }
   };
 
-  const handleDeleteProject = async () => {
-    if (!isAdmin) return;
-    if (!confirm(`Are you sure you want to delete the project "${project.name}"? This action cannot be undone and will delete all tasks within.`)) return;
-    try {
-      await api.delete(`/projects/${id}`);
-      toast.success('Project deleted successfully');
-      // Redirect back to dashboard or projects list after deletion
-      window.location.href = '/'; 
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete project');
-    }
+  const handleDeleteTaskWithUndo = (taskToDelete) => {
+    const originalTasks = [...tasks];
+    setTasks(tasks.filter(t => t._id !== taskToDelete._id));
+
+    toast.custom((t) => (
+      <div className={`toast-undo ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+        <span>Deleting task...</span>
+        <button onClick={() => { 
+          toast.dismiss(t.id); 
+          setTasks(originalTasks);
+          clearTimeout(window[`delete_task_${taskToDelete._id}`]);
+        }}>Undo</button>
+      </div>
+    ), { id: `delete_${taskToDelete._id}`, duration: 5000 });
+
+    window[`delete_task_${taskToDelete._id}`] = setTimeout(async () => {
+      try {
+        await api.delete(`/projects/${id}/tasks/${taskToDelete._id}`);
+      } catch (err) {
+        setTasks(originalTasks);
+        toast.error('Failed to delete task');
+      }
+    }, 5000);
   };
 
+  const handleDeleteProjectWithUndo = () => {
+    if (!isAdmin) return;
+    toast.custom((t) => (
+      <div className={`toast-undo ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+        <span>Deleting project "{project.name}"...</span>
+        <button onClick={() => { 
+          toast.dismiss(t.id); 
+          clearTimeout(window[`delete_proj_${id}`]);
+        }}>Undo</button>
+      </div>
+    ), { id: `delete_proj_${id}`, duration: 5000 });
 
-  if (loading) return <div className="loading">Loading project...</div>;
+    window[`delete_proj_${id}`] = setTimeout(async () => {
+      try {
+        await api.delete(`/projects/${id}`);
+        toast.success('Project deleted');
+        window.location.href = '/'; 
+      } catch (err) {
+        toast.error('Failed to delete project');
+      }
+    }, 5000);
+  };
+
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        <div className="page-header">
+          <div>
+            <Skeleton width="180px" height="32px" style={{ marginBottom: '8px' }} />
+            <Skeleton width="120px" height="16px" />
+          </div>
+        </div>
+        <div className="filter-cards">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div className="filter-card" key={i}>
+              <Skeleton width="60px" height="14px" style={{ marginBottom: '6px' }} />
+              <Skeleton width="30px" height="28px" />
+            </div>
+          ))}
+        </div>
+        <Skeleton width="150px" height="20px" style={{ marginBottom: '16px' }} />
+        {[1, 2, 3].map(i => <Skeleton key={i} height="48px" style={{ marginBottom: '8px' }} />)}
+      </motion.div>
+    );
+  }
+
   if (!project) return <div className="loading">Project not found</div>;
 
   const filterLabel = filters.find(f => f.key === activeFilter)?.label || 'All tasks';
 
   return (
-    <div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} key={id}>
       {/* Header */}
       <div className="page-header">
         <div>
@@ -167,7 +206,7 @@ export default function ProjectDetail() {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {isAdmin && (
-            <button className="btn btn-ghost" onClick={handleDeleteProject} title="Delete Project">
+            <button className="btn btn-ghost" onClick={handleDeleteProjectWithUndo} title="Delete Project">
               <Trash2 size={14} style={{ color: 'var(--c-red)' }} />
             </button>
           )}
@@ -183,14 +222,15 @@ export default function ProjectDetail() {
       {/* Filter cards */}
       <div className="filter-cards">
         {filters.map(f => (
-          <div
+          <motion.div
             key={f.key}
+            whileTap={{ scale: 0.97 }}
             className={`filter-card ${activeFilter === f.key ? 'active' : ''}`}
             onClick={() => setActiveFilter(f.key)}
           >
             <div className="fc-label">{f.label}</div>
             <div className={`fc-value ${f.colorClass}`}>{f.count}</div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
@@ -201,50 +241,40 @@ export default function ProjectDetail() {
 
       {filteredTasks.length === 0 ? (
         <div className="empty-state">
-          <h3>No tasks here</h3>
+          {activeFilter === 'overdue' && <h3>No overdue tasks 🎉</h3>}
+          {activeFilter === 'progress' && <h3>No tasks in progress</h3>}
+          {activeFilter === 'done' && <h3>No completed tasks yet</h3>}
+          {activeFilter === 'mine' && <h3>You have no tasks here</h3>}
+          {activeFilter === 'total' && <h3>No tasks in this project</h3>}
           <p>Try a different filter or add a new task.</p>
         </div>
       ) : (
-        filteredTasks.map(task => {
-          const meta = statusMeta(task);
-          const assignee = task.assignedTo;
-          const isMyTask = assignee?._id === user?._id || task.createdBy === user?._id;
+        filteredTasks.map((task, i) => {
+          const isMyTask = task.assignedTo?._id === user?._id || task.createdBy === user?._id;
           const canEdit = isAdmin || isMyTask;
-          const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
 
           return (
-            <div className="task-row" key={task._id}>
-              <div className="task-dot" style={{ background: meta.dot }} />
-              <div className="task-row-name">{task.title}</div>
-              {assignee && (
-                <div className="avatar avatar-xs" style={{ background: avatarColors[members.findIndex(m => m.userId._id === assignee._id) % avatarColors.length] }} title={assignee.name}>
-                  {getInitials(assignee.name)}
-                </div>
-              )}
-              {dueStr && <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>{dueStr}</span>}
-              {canEdit ? (
-                <select value={task.status} onChange={e => handleStatusChange(task._id, e.target.value)} className="status-select">
-                  <option value="todo">Todo</option>
-                  <option value="in-progress">In progress</option>
-                  <option value="done">Done</option>
-                </select>
-              ) : (
-                <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
-              )}
-              {canEdit && (
-                <button className="task-menu-btn" onClick={() => handleDeleteTask(task._id)} title="Delete">
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
+            <TaskRow 
+              key={task._id} 
+              task={task} 
+              delay={i * 0.03} 
+              canEdit={canEdit} 
+              members={members} 
+              onStatusChange={handleStatusChange} 
+              onDelete={handleDeleteTaskWithUndo} 
+            />
           );
         })
       )}
 
       {/* Create Task Modal */}
+      <AnimatePresence>
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
+            className="modal" onClick={e => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Create new task</h2>
               <button className="modal-close" onClick={() => setShowTaskModal(false)}>×</button>
@@ -303,14 +333,19 @@ export default function ProjectDetail() {
                 <button type="submit" className="btn btn-primary">Create task</button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
       {/* Member Modal */}
+      <AnimatePresence>
       {showMemberModal && (
         <div className="modal-overlay" onClick={() => setShowMemberModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
+            className="modal" onClick={e => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Team members</h2>
               <button className="modal-close" onClick={() => setShowMemberModal(false)}>×</button>
@@ -354,9 +389,10 @@ export default function ProjectDetail() {
                 <button className="btn btn-ghost" onClick={() => setShowMemberModal(false)}>Close</button>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
       )}
-    </div>
+      </AnimatePresence>
+    </motion.div>
   );
 }

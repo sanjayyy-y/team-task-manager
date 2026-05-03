@@ -3,6 +3,9 @@ import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 import { Plus, UserPlus, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import Skeleton from '../components/ui/Skeleton';
+import TaskRow from '../components/ui/TaskRow';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -34,7 +37,7 @@ export default function Team() {
   const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
-    if (!isAdmin) return; // shouldn't happen due to sidebar guard, but just in case
+    if (!isAdmin) return; // shouldn't happen due to sidebar guard
     fetchTeams();
   }, [isAdmin]);
 
@@ -152,19 +155,45 @@ export default function Team() {
     }
   };
 
-  const statusMeta = (task) => {
-    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
-    if (isOverdue) return { dot: 'var(--c-red)', pillClass: 'pill-red', label: 'Overdue' };
-    if (task.status === 'done') return { dot: 'var(--c-green)', pillClass: 'pill-green', label: 'Done' };
-    if (task.status === 'in-progress') return { dot: 'var(--c-blue)', pillClass: 'pill-blue', label: 'In progress' };
-    return { dot: 'var(--c-gray)', pillClass: 'pill-gray', label: 'Todo' };
-  };
-
   if (!isAdmin) {
     return <div className="page-content"><p>Access denied. Teams are for admins only.</p></div>;
   }
 
-  if (loading) return <div className="loading">Loading teams...</div>;
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        <div className="page-header">
+          <div>
+            <Skeleton width="150px" height="32px" style={{ marginBottom: '8px' }} />
+            <Skeleton width="200px" height="16px" />
+          </div>
+        </div>
+        <div className="team-layout">
+          <div className="team-sidebar">
+            <Skeleton width="100%" height="200px" />
+          </div>
+          <div className="team-detail">
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+              <Skeleton width="36px" height="36px" borderRadius="50%" />
+              <div>
+                <Skeleton width="120px" height="20px" style={{ marginBottom: '4px' }} />
+                <Skeleton width="80px" height="14px" />
+              </div>
+            </div>
+            <div className="team-stats" style={{ marginBottom: '24px' }}>
+              {[1, 2, 3].map(i => (
+                <div className="team-stat-card" key={i}>
+                  <Skeleton width="60px" height="14px" style={{ marginBottom: '6px' }} />
+                  <Skeleton width="30px" height="28px" />
+                </div>
+              ))}
+            </div>
+            {[1, 2, 3].map(i => <Skeleton key={i} height="48px" style={{ marginBottom: '8px' }} />)}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   const completed = memberTasks.filter(t => t.status === 'done').length;
   const pending = memberTasks.length - completed;
@@ -177,7 +206,7 @@ export default function Team() {
   );
 
   return (
-    <div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
       <div className="page-header">
         <div>
           <h1>Teams Directory</h1>
@@ -234,7 +263,6 @@ export default function Team() {
                       <div className="team-member-name">{m.name}</div>
                       <div className="team-member-role">{m.role === 'admin' ? 'Admin' : 'Member'}</div>
                     </div>
-                    {/* remove member btn on hover */}
                     {selectedMember?._id === m._id && m._id !== user._id && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRemoveMember(m._id, m.name); }}
@@ -257,7 +285,7 @@ export default function Team() {
             </div>
 
             {/* Right: Selected Member's Tasks */}
-            <div className="team-detail">
+            <motion.div className="team-detail" key={selectedMember?._id || 'empty'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
               {selectedMember ? (
                 <>
                   <div className="team-detail-header">
@@ -275,18 +303,18 @@ export default function Team() {
                   </div>
 
                   <div className="team-stats">
-                    <div className="team-stat-card">
+                    <motion.div whileTap={{ scale: 0.97 }} className="team-stat-card">
                       <div className="label">Total tasks</div>
                       <div className="value value-white">{memberTasks.length}</div>
-                    </div>
-                    <div className="team-stat-card">
+                    </motion.div>
+                    <motion.div whileTap={{ scale: 0.97 }} className="team-stat-card">
                       <div className="label">Completed</div>
                       <div className="value value-green">{completed}</div>
-                    </div>
-                    <div className="team-stat-card">
+                    </motion.div>
+                    <motion.div whileTap={{ scale: 0.97 }} className="team-stat-card">
                       <div className="label">Pending</div>
                       <div className="value value-blue">{pending}</div>
-                    </div>
+                    </motion.div>
                   </div>
 
                   <div style={{ marginTop: '20px' }}>
@@ -294,36 +322,33 @@ export default function Team() {
                     {memberTasks.length === 0 ? (
                       <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No active tasks across any projects.</p>
                     ) : (
-                      memberTasks.map(task => {
-                        const meta = statusMeta(task);
-                        const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null;
-                        return (
-                          <div className="task-row" key={task._id}>
-                            <div className="task-dot" style={{ background: meta.dot }} />
-                            <div className="task-row-name" style={{ flex: 1 }}>
-                              {task.title}
-                              <div style={{ fontSize: '11px', color: 'var(--text-2)', marginTop: '2px' }}>Project: {task.projectId?.name || 'Unknown'}</div>
-                            </div>
-                            {dueStr && <span style={{ fontSize: '12px', color: 'var(--text-2)', marginRight: '8px' }}>{dueStr}</span>}
-                            <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
-                          </div>
-                        );
-                      })
+                      memberTasks.map((task, i) => (
+                        <TaskRow 
+                          key={task._id} 
+                          task={task} 
+                          delay={i * 0.03} 
+                          canEdit={false} 
+                        />
+                      ))
                     )}
                   </div>
                 </>
               ) : (
                 <p style={{ color: 'var(--text-2)', padding: '24px', fontSize: '13px' }}>Select a team member to view their overall workload.</p>
               )}
-            </div>
+            </motion.div>
           </div>
         </>
       )}
 
       {/* Create Team Modal */}
+      <AnimatePresence>
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
+            className="modal" onClick={e => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Create Employee Team</h2>
               <button className="modal-close" onClick={() => setShowCreateModal(false)}>×</button>
@@ -342,14 +367,19 @@ export default function Team() {
                 <button type="submit" className="btn btn-primary" disabled={creating}>{creating ? 'Creating...' : 'Create team'}</button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
       {/* Add Member Modal */}
+      <AnimatePresence>
       {showAddMember && (
         <div className="modal-overlay" onClick={() => setShowAddMember(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
+            className="modal" onClick={e => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Add employee to {activeTeam?.name}</h2>
               <button className="modal-close" onClick={() => setShowAddMember(false)}>×</button>
@@ -385,10 +415,11 @@ export default function Team() {
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => { setShowAddMember(false); setUserSearch(''); }}>Done</button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
-    </div>
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

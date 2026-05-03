@@ -1,13 +1,22 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import connectDB from './src/config/db.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-//Middleware
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// Middleware
+app.use(helmet());
+app.use(compression());
+
+const allowedOrigin = process.env.NODE_ENV === 'production' 
+  ? process.env.CLIENT_URL 
+  : 'http://localhost:5173';
+
+app.use(cors({ origin: allowedOrigin, credentials: true }));
 app.use(express.json());
 
 //Health Check
