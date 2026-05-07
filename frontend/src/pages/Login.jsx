@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -11,11 +11,6 @@ export default function Login() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
-  const highlights = [
-    'Track priorities without spreadsheet drift',
-    'See ownership, deadlines, and delivery status at a glance',
-    'Keep admins and members aligned in one workspace',
-  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,31 +39,20 @@ export default function Login() {
           <div className="auth-showcase-copy">
             <div className="auth-badge">
               <Sparkles size={14} />
-              <span>Team planning, minus the chaos</span>
+              <span>Focused team planning</span>
             </div>
-            <h1>Welcome back to the workspace your team actually uses.</h1>
-            <p>
-              Pick up where you left off, review active work, and keep every deadline moving.
-            </p>
-          </div>
-
-          <div className="auth-highlight-list">
-            {highlights.map((item) => (
-              <div key={item} className="auth-highlight-item">
-                <CheckCircle2 size={18} />
-                <span>{item}</span>
-              </div>
-            ))}
+            <h1>Welcome back.</h1>
+            <p>Sign in to manage tasks, projects, and team progress in one place.</p>
           </div>
 
           <div className="auth-showcase-panel">
             <div className="auth-showcase-stat">
-              <span>Team sync</span>
-              <strong>Daily visibility</strong>
+              <span>Workspace</span>
+              <strong>Clear daily flow</strong>
             </div>
             <div className="auth-showcase-stat">
               <ShieldCheck size={18} />
-              <span>Secure role-based access for admins and members</span>
+              <span>Role-based access for admins and members</span>
             </div>
           </div>
         </section>

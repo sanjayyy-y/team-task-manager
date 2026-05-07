@@ -145,26 +145,24 @@ export default function Signup() {
           <div className="auth-showcase-copy">
             <div className="auth-badge">
               <UserRoundPlus size={14} />
-              <span>Quick setup for growing teams</span>
+              <span>Quick team setup</span>
             </div>
-            <h1>Start with structure from day one.</h1>
-            <p>
-              Create a team-ready workspace with clear ownership, project visibility, and role-based access.
-            </p>
+            <h1>Create your workspace.</h1>
+            <p>Set up your account and start collaborating with a cleaner workflow.</p>
           </div>
 
           <div className="auth-showcase-metrics">
             <div className="auth-metric-card">
               <strong>Projects</strong>
-              <span>Track launches, internal work, and recurring tasks</span>
+              <span>Track work in one place</span>
             </div>
             <div className="auth-metric-card">
               <strong>People</strong>
-              <span>Assign responsibility without losing context</span>
+              <span>Assign ownership clearly</span>
             </div>
             <div className="auth-metric-card">
               <strong>Deadlines</strong>
-              <span>Surface progress before things slip</span>
+              <span>Keep delivery on schedule</span>
             </div>
           </div>
         </section>

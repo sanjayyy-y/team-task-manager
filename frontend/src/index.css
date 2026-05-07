@@ -142,8 +142,8 @@ textarea.form-input { resize: vertical; min-height: 72px; }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 28px;
-  min-height: 720px;
+  gap: 22px;
+  min-height: 640px;
   padding: 36px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
@@ -266,32 +266,16 @@ textarea.form-input { resize: vertical; min-height: 72px; }
   font-weight: 500;
 }
 .auth-showcase-copy h1 {
-  margin-top: 18px;
-  font-size: clamp(2.3rem, 3vw, 3.5rem);
-  line-height: 1;
-  max-width: 10ch;
+  margin-top: 16px;
+  font-size: clamp(2.1rem, 2.7vw, 3rem);
+  line-height: 1.02;
+  max-width: 8ch;
 }
 .auth-showcase-copy p {
-  margin-top: 18px;
-  max-width: 46ch;
+  margin-top: 14px;
+  max-width: 34ch;
   color: rgba(232, 232, 237, 0.78);
-  font-size: 15px;
-}
-.auth-highlight-list {
-  display: grid;
-  gap: 14px;
-}
-.auth-highlight-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  color: rgba(232, 232, 237, 0.9);
   font-size: 14px;
-}
-.auth-highlight-item svg {
-  color: #90d6ac;
-  flex-shrink: 0;
-  margin-top: 1px;
 }
 .auth-showcase-panel {
   display: grid;
@@ -300,8 +284,8 @@ textarea.form-input { resize: vertical; min-height: 72px; }
 }
 .auth-showcase-stat,
 .auth-metric-card {
-  min-height: 110px;
-  padding: 18px;
+  min-height: 92px;
+  padding: 16px 18px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -315,16 +299,16 @@ textarea.form-input { resize: vertical; min-height: 72px; }
 }
 .auth-showcase-stat strong,
 .auth-metric-card strong {
-  font-size: 20px;
+  font-size: 16px;
 }
 .auth-showcase-stat span,
 .auth-metric-card span {
   color: rgba(232, 232, 237, 0.72);
-  font-size: 13px;
+  font-size: 12px;
 }
 .auth-showcase-metrics {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 .auth-grid {
   display: grid;
