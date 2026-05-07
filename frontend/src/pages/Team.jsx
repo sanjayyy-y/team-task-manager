@@ -242,7 +242,7 @@ export default function Team() {
             {/* Left sidebar: Team Members */}
             <div className="team-sidebar">
               <div className="team-sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Team Members · {members.length}</span>
+                <span>Team Members - {members.length}</span>
                 <button onClick={handleDeleteTeam} title="Delete Team" style={{ background: 'none', color: 'var(--text-3)' }}><Trash2 size={13} /></button>
               </div>
 
@@ -296,7 +296,7 @@ export default function Team() {
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '15px' }}>{selectedMember.name}</div>
                         <div style={{ fontSize: '13px', color: 'var(--text-2)' }}>
-                          {selectedMember.email} · {selectedMember.role}
+                          {selectedMember.email} - {selectedMember.role}
                         </div>
                       </div>
                     </div>
@@ -351,7 +351,7 @@ export default function Team() {
           >
             <div className="modal-header">
               <h2>Create Employee Team</h2>
-              <button className="modal-close" onClick={() => setShowCreateModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)}>x</button>
             </div>
             <form onSubmit={handleCreateTeam}>
               <div className="form-group">
@@ -382,7 +382,7 @@ export default function Team() {
           >
             <div className="modal-header">
               <h2>Add employee to {activeTeam?.name}</h2>
-              <button className="modal-close" onClick={() => setShowAddMember(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowAddMember(false)}>x</button>
             </div>
             <div className="form-group">
               <input
@@ -422,4 +422,5 @@ export default function Team() {
     </motion.div>
   );
 }
+
 

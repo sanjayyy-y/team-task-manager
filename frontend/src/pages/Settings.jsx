@@ -104,7 +104,7 @@ export default function Settings() {
           </div>
           <div className="form-group">
             <label>New password (leave blank to keep current)</label>
-            <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" minLength="6" />
+            <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} placeholder="........" minLength="6" />
           </div>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Saving...' : 'Save changes'}
@@ -122,3 +122,4 @@ export default function Settings() {
     </div>
   );
 }
+

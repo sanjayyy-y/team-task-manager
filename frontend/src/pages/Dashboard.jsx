@@ -133,7 +133,7 @@ export default function Dashboard() {
         <div className="dash-panel">
           <h2>{isAdmin ? 'Recent tasks' : 'Your tasks'}</h2>
           {myTasks.length === 0 ? (
-            <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No tasks yet.</p>
+            <p className="panel-empty-copy">No tasks yet.</p>
           ) : (
             myTasks.map((task, i) => {
               const meta = statusMeta(task);
@@ -154,7 +154,7 @@ export default function Dashboard() {
         <div className="dash-panel">
           <h2>Active projects</h2>
           {projects.length === 0 ? (
-            <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>No projects yet.</p>
+            <p className="panel-empty-copy">No projects yet.</p>
           ) : (
             projects.map((proj, i) => {
               const ps = projectStats[proj._id] || { total: 0, done: 0 };

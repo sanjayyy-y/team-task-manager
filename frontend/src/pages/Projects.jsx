@@ -70,7 +70,7 @@ export default function Projects() {
               <h3>{proj.name}</h3>
               <p>{proj.description || 'No description provided.'}</p>
               <div className="project-card-footer">
-                <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <span className="project-card-link">
                   View Board <ArrowRight size={14} />
                 </span>
               </div>
@@ -84,7 +84,7 @@ export default function Projects() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create new project</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowModal(false)}>x</button>
             </div>
             <form onSubmit={handleCreate}>
               <div className="form-group">
@@ -106,3 +106,4 @@ export default function Projects() {
     </div>
   );
 }
+

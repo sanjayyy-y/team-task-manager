@@ -202,7 +202,7 @@ export default function ProjectDetail() {
       <div className="page-header">
         <div>
           <h1>{project.name}</h1>
-          <div className="subtitle">{members.length} members · {tasks.length} tasks</div>
+          <div className="subtitle">{members.length} members - {tasks.length} tasks</div>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {isAdmin && (
@@ -241,7 +241,7 @@ export default function ProjectDetail() {
 
       {filteredTasks.length === 0 ? (
         <div className="empty-state">
-          {activeFilter === 'overdue' && <h3>No overdue tasks 🎉</h3>}
+          {activeFilter === 'overdue' && <h3>No overdue tasks </h3>}
           {activeFilter === 'progress' && <h3>No tasks in progress</h3>}
           {activeFilter === 'done' && <h3>No completed tasks yet</h3>}
           {activeFilter === 'mine' && <h3>You have no tasks here</h3>}
@@ -277,7 +277,7 @@ export default function ProjectDetail() {
           >
             <div className="modal-header">
               <h2>Create new task</h2>
-              <button className="modal-close" onClick={() => setShowTaskModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowTaskModal(false)}>x</button>
             </div>
             <form onSubmit={handleCreateTask}>
               <div className="form-group">
@@ -348,7 +348,7 @@ export default function ProjectDetail() {
           >
             <div className="modal-header">
               <h2>Team members</h2>
-              <button className="modal-close" onClick={() => setShowMemberModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowMemberModal(false)}>x</button>
             </div>
             <div style={{ marginBottom: '16px' }}>
               {members.map((m, i) => (
@@ -396,3 +396,4 @@ export default function ProjectDetail() {
     </motion.div>
   );
 }
+
