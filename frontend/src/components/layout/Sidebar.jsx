@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import api from '../../services/api';
-import { LayoutDashboard, Users, Settings, ChevronRight, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, ChevronRight, LogOut, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '../ui/Skeleton';
 
@@ -16,6 +17,7 @@ const getInitials = (name) => {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
@@ -110,6 +112,17 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-bottom">
+        <button className="theme-toggle" onClick={toggleTheme} type="button" aria-label="Toggle theme">
+          <div className="theme-toggle-track">
+            <div className={`theme-toggle-thumb ${theme === 'light' ? 'light' : ''}`}>
+              {theme === 'dark' ? <Moon size={13} /> : <Sun size={13} />}
+            </div>
+          </div>
+          <div className="theme-toggle-copy">
+            <span>Appearance</span>
+            <strong>{theme === 'dark' ? 'Dark mode' : 'Light mode'}</strong>
+          </div>
+        </button>
         <NavLink to="/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
           <Settings size={16} /> Settings
         </NavLink>

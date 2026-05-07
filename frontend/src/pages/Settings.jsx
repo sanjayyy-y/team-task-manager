@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { Moon, Sun } from 'lucide-react';
 
 export default function Settings() {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const [name, setName] = useState(user?.name || '');
@@ -57,6 +60,34 @@ export default function Settings() {
         <div>
           <h1>Settings</h1>
           <div className="subtitle">Manage your account</div>
+        </div>
+      </div>
+
+      <div className="settings-card">
+        <h2>Appearance</h2>
+        <div className="theme-choice-row">
+          <button
+            type="button"
+            className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
+            onClick={() => setTheme('dark')}
+          >
+            <Moon size={16} />
+            <div>
+              <strong>Dark</strong>
+              <span>Low-glare workspace for longer sessions</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            className={`theme-option ${theme === 'light' ? 'active' : ''}`}
+            onClick={() => setTheme('light')}
+          >
+            <Sun size={16} />
+            <div>
+              <strong>Light</strong>
+              <span>Brighter view with softer contrast</span>
+            </div>
+          </button>
         </div>
       </div>
 

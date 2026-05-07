@@ -9,11 +9,25 @@ import ProjectDetail from './pages/ProjectDetail';
 import Team from './pages/Team';
 import Settings from './pages/Settings';
 import { Toaster } from 'react-hot-toast';
+import { useTheme } from './hooks/useTheme';
 
 export default function App() {
+  const { theme } = useTheme();
+
   return (
     <>
-      <Toaster position="top-right" toastOptions={{ style: { background: '#222228', color: '#e8e8ed', border: '1px solid #2a2a32', fontSize: '13px' } }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: 'var(--toast-bg)',
+            color: 'var(--toast-text)',
+            border: '1px solid var(--toast-border)',
+            fontSize: '13px',
+          },
+        }}
+        key={theme}
+      />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
