@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, BriefcaseBusiness, ShieldPlus, UserRoundPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Signup() {
@@ -12,6 +13,20 @@ export default function Signup() {
 
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const roleCards = [
+    {
+      value: 'admin',
+      label: 'Admin',
+      description: 'Manage projects, assign work, and guide the team.',
+      icon: ShieldPlus,
+    },
+    {
+      value: 'member',
+      label: 'Member',
+      description: 'Join the workspace and focus on assigned work.',
+      icon: BriefcaseBusiness,
+    },
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,49 +45,129 @@ export default function Signup() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <div className="auth-logo-icon">T</div>
-          <span>TeamTask</span>
-        </div>
-
-        <h1>Create account</h1>
-        <p className="subtitle">Get started with your team</p>
-
-        {error && <div className="error-msg">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input type="text" className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required />
+      <div className="auth-shell auth-shell-signup">
+        <section className="auth-card auth-card-wide">
+          <div className="auth-logo auth-logo-mobile">
+            <div className="auth-logo-icon">T</div>
+            <span>TeamTask</span>
           </div>
 
-          <div className="form-group">
-            <label>Email</label>
-            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" required />
+          <div className="auth-card-header">
+            <h2>Create account</h2>
+            <p className="subtitle">Set up your workspace access and choose how you want to collaborate</p>
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="•••••••• (min 6 chars)" required minLength="6" />
+          {error && <div className="error-msg">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-grid">
+              <div className="form-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  className="form-input auth-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Alex Morgan"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  className="form-input auth-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                className="form-input auth-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+                required
+                minLength="6"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Choose role</label>
+              <div className="role-options">
+                {roleCards.map(({ value, label, description, icon: Icon }) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={`role-card ${role === value ? 'active' : ''}`}
+                    onClick={() => setRole(value)}
+                  >
+                    <div className="role-card-icon">
+                      <Icon size={18} />
+                    </div>
+                    <div>
+                      <strong>{label}</strong>
+                      <span>{description}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <select className="form-input auth-select" value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+              </select>
+            </div>
+
+            <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+              <span>{loading ? 'Creating account...' : 'Create account'}</span>
+              {!loading && <ArrowRight size={16} />}
+            </button>
+          </form>
+
+          <div className="auth-link">
+            Already have an account? <Link to="/login">Sign in</Link>
+          </div>
+        </section>
+
+        <section className="auth-showcase auth-showcase-compact">
+          <div className="auth-logo auth-logo-left">
+            <div className="auth-logo-icon">T</div>
+            <span>TeamTask</span>
           </div>
 
-          <div className="form-group">
-            <label>Role</label>
-            <select className="form-input" value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="admin">Admin</option>
-              <option value="member">Member</option>
-            </select>
+          <div className="auth-showcase-copy">
+            <div className="auth-badge">
+              <UserRoundPlus size={14} />
+              <span>Quick setup for growing teams</span>
+            </div>
+            <h1>Start with structure from day one.</h1>
+            <p>
+              Create a team-ready workspace with clear ownership, project visibility, and role-based access.
+            </p>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem' }} disabled={loading}>
-            {loading ? 'Creating account...' : 'Sign up'}
-          </button>
-        </form>
-
-        <div className="auth-link">
-          Already have an account? <Link to="/login">Sign in</Link>
-        </div>
+          <div className="auth-showcase-metrics">
+            <div className="auth-metric-card">
+              <strong>Projects</strong>
+              <span>Track launches, internal work, and recurring tasks</span>
+            </div>
+            <div className="auth-metric-card">
+              <strong>People</strong>
+              <span>Assign responsibility without losing context</span>
+            </div>
+            <div className="auth-metric-card">
+              <strong>Deadlines</strong>
+              <span>Surface progress before things slip</span>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

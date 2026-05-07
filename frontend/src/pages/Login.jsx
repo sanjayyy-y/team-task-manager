@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -10,6 +11,11 @@ export default function Login() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const highlights = [
+    'Track priorities without spreadsheet drift',
+    'See ownership, deadlines, and delivery status at a glance',
+    'Keep admins and members aligned in one workspace',
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,54 +34,97 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <div className="auth-logo-icon">T</div>
-          <span>TeamTask</span>
-        </div>
-
-        <h1>Welcome back</h1>
-        <p className="subtitle">Sign in to your workspace</p>
-
-        {error && <div className="error-msg">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
+      <div className="auth-shell">
+        <section className="auth-showcase">
+          <div className="auth-logo auth-logo-left">
+            <div className="auth-logo-icon">T</div>
+            <span>TeamTask</span>
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+          <div className="auth-showcase-copy">
+            <div className="auth-badge">
+              <Sparkles size={14} />
+              <span>Team planning, minus the chaos</span>
+            </div>
+            <h1>Welcome back to the workspace your team actually uses.</h1>
+            <p>
+              Pick up where you left off, review active work, and keep every deadline moving.
+            </p>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem' }} disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
+          <div className="auth-highlight-list">
+            {highlights.map((item) => (
+              <div key={item} className="auth-highlight-item">
+                <CheckCircle2 size={18} />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
 
-        <div className="auth-link">
-          Don't have an account? <Link to="/signup">Sign up</Link>
-        </div>
+          <div className="auth-showcase-panel">
+            <div className="auth-showcase-stat">
+              <span>Team sync</span>
+              <strong>Daily visibility</strong>
+            </div>
+            <div className="auth-showcase-stat">
+              <ShieldCheck size={18} />
+              <span>Secure role-based access for admins and members</span>
+            </div>
+          </div>
+        </section>
 
-        <div className="auth-footer">
-          Role assigned on signup: Admin or Member
-        </div>
+        <section className="auth-card">
+          <div className="auth-logo auth-logo-mobile">
+            <div className="auth-logo-icon">T</div>
+            <span>TeamTask</span>
+          </div>
+
+          <div className="auth-card-header">
+            <h2>Sign in</h2>
+            <p className="subtitle">Enter your details to access your workspace</p>
+          </div>
+
+          {error && <div className="error-msg">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                className="form-input auth-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                className="form-input auth-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="........"
+                required
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+              <span>{loading ? 'Signing in...' : 'Sign in'}</span>
+              {!loading && <ArrowRight size={16} />}
+            </button>
+          </form>
+
+          <div className="auth-link">
+            Don&apos;t have an account? <Link to="/signup">Create one</Link>
+          </div>
+
+          <div className="auth-footer">
+            Role access is assigned when the account is created.
+          </div>
+        </section>
       </div>
     </div>
   );
