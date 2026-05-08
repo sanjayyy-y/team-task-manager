@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -29,43 +31,21 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <div className="auth-shell">
-        <section className="auth-showcase">
-          <div className="auth-logo auth-logo-left">
-            <div className="auth-logo-icon">T</div>
-            <span>TeamTask</span>
-          </div>
+      <button className="auth-theme-button" onClick={toggleTheme} type="button" aria-label="Toggle theme">
+        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
 
-          <div className="auth-showcase-copy">
-            <div className="auth-badge">
-              <Sparkles size={14} />
-              <span>Focused team planning</span>
-            </div>
-            <h1>Welcome back.</h1>
-            <p>Sign in to manage tasks, projects, and team progress in one place.</p>
-          </div>
-
-          <div className="auth-showcase-panel">
-            <div className="auth-showcase-stat">
-              <span>Workspace</span>
-              <strong>Clear daily flow</strong>
-            </div>
-            <div className="auth-showcase-stat">
-              <ShieldCheck size={18} />
-              <span>Role-based access for admins and members</span>
-            </div>
-          </div>
-        </section>
-
+      <div className="auth-shell auth-shell-refined">
         <section className="auth-card">
-          <div className="auth-logo auth-logo-mobile">
+          <div className="auth-logo">
             <div className="auth-logo-icon">T</div>
             <span>TeamTask</span>
           </div>
 
           <div className="auth-card-header">
-            <h2>Sign in</h2>
-            <p className="subtitle">Enter your details to access your workspace</p>
+            <span className="auth-eyebrow">Welcome back</span>
+            <h2>Sign in to your workspace</h2>
+            <p className="subtitle">Review tasks, project progress, and team updates from one focused place.</p>
           </div>
 
           {error && <div className="error-msg">{error}</div>}
@@ -107,6 +87,42 @@ export default function Login() {
 
           <div className="auth-footer">
             Role access is assigned when the account is created.
+          </div>
+        </section>
+
+        <section className="auth-preview" aria-label="Workspace preview">
+          <div className="auth-preview-top">
+            <span>Today</span>
+            <strong>4 priorities</strong>
+          </div>
+          <div className="auth-preview-card primary">
+            <div>
+              <span className="preview-kicker">Project</span>
+              <strong>Website Launch</strong>
+            </div>
+            <div className="preview-progress">
+              <span style={{ width: '72%' }} />
+            </div>
+          </div>
+          <div className="auth-preview-list">
+            {['Finalize login flow', 'Review team tasks', 'Prepare sprint notes'].map((task, index) => (
+              <div className="auth-preview-task" key={task}>
+                <CheckCircle2 size={16} />
+                <span>{task}</span>
+                <small>{index === 0 ? 'Now' : 'Next'}</small>
+              </div>
+            ))}
+          </div>
+          <div className="auth-preview-bottom">
+            <div>
+              <span>Team focus</span>
+              <strong>On track</strong>
+            </div>
+            <div className="preview-avatars">
+              <span>SA</span>
+              <span>PM</span>
+              <span>RK</span>
+            </div>
           </div>
         </section>
       </div>

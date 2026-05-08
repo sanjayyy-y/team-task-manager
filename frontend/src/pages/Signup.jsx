@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BriefcaseBusiness, ShieldPlus, UserRoundPlus } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, Moon, ShieldPlus, Sun } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -12,6 +13,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
 
   const { signup } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const roleCards = [
     {
@@ -45,16 +47,21 @@ export default function Signup() {
 
   return (
     <div className="auth-page">
-      <div className="auth-shell auth-shell-signup">
+      <button className="auth-theme-button" onClick={toggleTheme} type="button" aria-label="Toggle theme">
+        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+
+      <div className="auth-shell auth-shell-refined auth-shell-signup">
         <section className="auth-card auth-card-wide">
-          <div className="auth-logo auth-logo-mobile">
+          <div className="auth-logo">
             <div className="auth-logo-icon">T</div>
             <span>TeamTask</span>
           </div>
 
           <div className="auth-card-header">
-            <h2>Create account</h2>
-            <p className="subtitle">Set up your workspace access and choose how you want to collaborate</p>
+            <span className="auth-eyebrow">Start organized</span>
+            <h2>Create your workspace account</h2>
+            <p className="subtitle">Choose your role and step into a cleaner team workflow.</p>
           </div>
 
           {error && <div className="error-msg">{error}</div>}
@@ -136,34 +143,35 @@ export default function Signup() {
           </div>
         </section>
 
-        <section className="auth-showcase auth-showcase-compact">
-          <div className="auth-logo auth-logo-left">
-            <div className="auth-logo-icon">T</div>
-            <span>TeamTask</span>
+        <section className="auth-preview" aria-label="Workspace preview">
+          <div className="auth-preview-top">
+            <span>Setup</span>
+            <strong>3 steps</strong>
           </div>
-
-          <div className="auth-showcase-copy">
-            <div className="auth-badge">
-              <UserRoundPlus size={14} />
-              <span>Quick team setup</span>
+          <div className="auth-preview-card primary">
+            <div>
+              <span className="preview-kicker">Workspace</span>
+              <strong>TeamTask Board</strong>
             </div>
-            <h1>Create your workspace.</h1>
-            <p>Set up your account and start collaborating with a cleaner workflow.</p>
+            <div className="preview-progress">
+              <span style={{ width: '45%' }} />
+            </div>
           </div>
-
-          <div className="auth-showcase-metrics">
-            <div className="auth-metric-card">
-              <strong>Projects</strong>
-              <span>Track work in one place</span>
+          <div className="auth-preview-list">
+            {['Create account', 'Choose role', 'Open dashboard'].map((step, index) => (
+              <div className="auth-preview-task" key={step}>
+                <CheckCircle2 size={16} />
+                <span>{step}</span>
+                <small>{index === 0 ? 'First' : 'Next'}</small>
+              </div>
+            ))}
+          </div>
+          <div className="auth-preview-bottom">
+            <div>
+              <span>Role access</span>
+              <strong>Admin or Member</strong>
             </div>
-            <div className="auth-metric-card">
-              <strong>People</strong>
-              <span>Assign ownership clearly</span>
-            </div>
-            <div className="auth-metric-card">
-              <strong>Deadlines</strong>
-              <span>Keep delivery on schedule</span>
-            </div>
+            <span className="preview-pill">Secure</span>
           </div>
         </section>
       </div>
